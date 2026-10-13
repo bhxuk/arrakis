@@ -1,0 +1,76 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Work out the version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $v = $env:GITHUB_REF_NAME.TrimStart('v')
+          } else {
+            [xml]$p = Get-Content src/Arrakis/Arrakis.csproj
+            $v = $p.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version $v"
+
+      - name: Build Arrakis.exe
+        shell: pwsh
+        run: >
+          dotnet publish src/Arrakis/Arrakis.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:DebugType=embedded
+          -p:Version=${{ steps.ver.outputs.version }} -o publish -nologo
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp "/DMyAppVersion=${{ steps.ver.outputs.version }}" "/DPublishDir=..\publish" installer\Arrakis.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Arrakis-Setup-${{ steps.ver.outputs.version }}
+          path: dist/*.exe
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Arrakis ${{ steps.ver.outputs.version }}
+          files: dist/*.exe
+          body: |
+            ## Download
+
+            **[Arrakis-Setup-${{ steps.ver.outputs.version }}.exe](https://github.com/bhxuk/arrakis/releases/download/${{ github.ref_name }}/Arrakis-Setup-${{ steps.ver.outputs.version }}.exe)**, then double-click it. No admin rights needed.
+
+            Windows may show "Windows protected your PC" because the installer isn't code-signed. Click **More info** and then **Run anyway**.
+
+            See the [user guide](https://github.com/bhxuk/arrakis/blob/main/docs/USER-GUIDE.md) and [what's new](https://github.com/bhxuk/arrakis/blob/main/CHANGELOG.md).
