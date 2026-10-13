@@ -67,6 +67,31 @@ namespace Arrakis.Core
         public int Corners { get; set; } = 12;
         public bool Shadow { get; set; } = true;
         public string SaveFolder { get; set; } = "";
+
+        // Capture modes and shortcuts
+        public string WindowHotkey { get; set; } = "Ctrl+Alt+D";
+        public string FullHotkey { get; set; } = "Ctrl+Alt+A";
+        public bool IncludeCursor { get; set; } = false;
+        public bool ShowMagnifier { get; set; } = true;
+        public int LastX { get; set; }
+        public int LastY { get; set; }
+        public int LastW { get; set; }
+        public int LastH { get; set; }
+
+        // What happens after a capture: Editor, Clipboard, Save, ClipboardAndSave
+        public string AfterCapture { get; set; } = "Editor";
+
+        // Saving
+        public string FilePattern { get; set; } = "Screenshot {yyyy-MM-dd HH.mm.ss}";
+        public string Format { get; set; } = "png";      // png, jpg, bmp, gif, tiff
+        public int JpegQuality { get; set; } = 90;
+
+        // Editor defaults
+        public string Colour { get; set; } = "#E2585F";
+        public string Fill { get; set; } = "None";       // None, Soft, Solid
+        public int Thickness { get; set; } = 3;
+        public int FontSize { get; set; } = 4;
+        public bool AnnotationShadow { get; set; } = true;
     }
 
     public class FocusSettings

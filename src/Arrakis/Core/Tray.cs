@@ -22,7 +22,14 @@ namespace Arrakis.Core
             menu.Items.Add("Open Arrakis", null, (s, e) => App.Instance.ShowHub());
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menu.Items.Add("Clipboard", null, (s, e) => App.Instance.Clipboard.ShowPanel());
-            menu.Items.Add("Take a screenshot", null, (s, e) => App.Instance.Capture.StartCapture());
+            var shot = new System.Windows.Forms.ToolStripMenuItem("Screenshot");
+            shot.DropDownItems.Add("Area", null, (s, e) => App.Instance.Capture.StartCapture());
+            shot.DropDownItems.Add("Window", null, (s, e) => App.Instance.Capture.Capture(Arrakis.Modules.CaptureMode.Window));
+            shot.DropDownItems.Add("Full screen", null, (s, e) => App.Instance.Capture.Capture(Arrakis.Modules.CaptureMode.FullScreen));
+            shot.DropDownItems.Add("All screens", null, (s, e) => App.Instance.Capture.Capture(Arrakis.Modules.CaptureMode.AllScreens));
+            shot.DropDownItems.Add("Last area again", null, (s, e) => App.Instance.Capture.Capture(Arrakis.Modules.CaptureMode.LastRegion));
+            shot.DropDownItems.Add("Area in 5 seconds", null, (s, e) => App.Instance.Capture.CaptureAfter(5, Arrakis.Modules.CaptureMode.Region));
+            menu.Items.Add(shot);
             menu.Items.Add("Start or pause focus", null, (s, e) => App.Instance.Focus.ToggleFromHotkey());
             menu.Items.Add("Edit widgets", null, (s, e) => App.Instance.Widgets.ToggleEditMode());
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
