@@ -51,6 +51,7 @@ Arrakis is using and lets you check for updates.
 - **Start with Windows**
 - **Appearance**: *Dark*, *Light* or *Match Windows*, and an accent colour (amber, teal, blue, pink, green or purple)
   for buttons, switches and highlights. Click **Restart Arrakis now** to see the change everywhere.
+  **Glass window** (Windows 11) gives the main window a frosted-glass background with your wallpaper showing softly through.
 - **Command bar**: on or off, and its shortcut. See [Command bar](#command-bar).
 - **Updates**: check for updates, install them automatically, or update now. See [Updates](#updates-and-moving-to-a-new-pc).
 - **Backup**: export and import everything.

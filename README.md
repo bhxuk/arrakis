@@ -36,7 +36,7 @@ Arrakis is one app with ten modules. Each one has its own switch, so it only doe
 | **Quick notes** | A note pad one shortcut away. Notes save as you type, are searchable, and can be pinned to the desktop as stickies. | Ctrl+Alt+N |
 | **Network** | Speed test, live ping graph, tips for slow Wi-Fi, the devices on your network, and alerts when the internet drops. | Speed test |
 
-And across the whole app: a **command bar** on **Alt+Space**, **light and dark themes** with six accent colours,
+And across the whole app: a **command bar** on **Alt+Space**, **light and dark themes** with six accent colours and a **glass window** on Windows 11,
 **automatic updates**, and **backup** to move everything to a new PC.
 
 ## A quick tour

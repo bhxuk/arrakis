@@ -1,5 +1,14 @@
 # What's new
 
+## 1.4.2 (13 October 2026)
+
+- **Glass window**: on Windows 11 the main Arrakis window now has a frosted-glass background, with your wallpaper
+  showing softly through the sidebar and cards. Turn it off in Arrakis > Settings > Appearance.
+- **New scroll bars** everywhere: slim, rounded and see-through, matching the rest of the app. They widen slightly
+  when you hover them, and you can still click above or below to jump a page.
+- **Smooth scrolling** in the main window: the mouse wheel glides to the new position instead of jumping. Galleries and
+  lists inside a page scroll on their own first.
+
 ## 1.4.1 (13 October 2026)
 
 An important fix if you hide the taskbar. Please update.
