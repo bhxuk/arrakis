@@ -373,7 +373,7 @@ namespace Arrakis.Modules
                 Cursor = Cursors.Hand
             };
             var dot = new Border { Width = 4, Height = 4, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 5, 0, 0) };
-            var stack = new StackPanel { Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom };
+            var stack = new StackPanel { Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom, Tag = "tile" };
             stack.Children.Add(tile);
             stack.Children.Add(dot);
             tile.MouseLeftButtonUp += (s, e) => Native.PressWinKey();
@@ -418,7 +418,7 @@ namespace Arrakis.Modules
             };
             item.Tile = tile;
             item.Dot = dot;
-            var stack = new StackPanel { Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom };
+            var stack = new StackPanel { Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom, Tag = "tile" };
             stack.Children.Add(tile);
             stack.Children.Add(dot);
             tile.MouseLeftButtonUp += (s, e) => Activate(item);
@@ -492,7 +492,7 @@ namespace Arrakis.Modules
             double range = baseSize * 2.6;
             foreach (UIElement child in _items.Children)
             {
-                if (!(child is StackPanel sp) || sp.Children.Count == 0 || !(sp.Children[0] is Border tile)) continue;
+                if (!(child is StackPanel sp) || !"tile".Equals(sp.Tag) || sp.Children.Count == 0 || !(sp.Children[0] is Border tile)) continue;
                 var center = sp.TranslatePoint(new Point(sp.ActualWidth / 2, 0), _items).X;
                 double d = Math.Abs(mouseX - center);
                 double f = d >= range ? 0 : (Math.Cos(d / range * Math.PI) + 1) / 2;
@@ -513,7 +513,7 @@ namespace Arrakis.Modules
             double size = S.IconSize;
             foreach (UIElement child in _items.Children)
             {
-                if (!(child is StackPanel sp) || sp.Children.Count == 0 || !(sp.Children[0] is Border tile)) continue;
+                if (!(child is StackPanel sp) || !"tile".Equals(sp.Tag) || sp.Children.Count == 0 || !(sp.Children[0] is Border tile)) continue;
                 tile.Width = size;
                 tile.Height = size;
                 tile.CornerRadius = new CornerRadius(size * 0.27);

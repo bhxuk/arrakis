@@ -53,23 +53,24 @@ jobs:
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp "/DMyAppVersion=${{ steps.ver.outputs.version }}" "/DPublishDir=..\publish" installer\Arrakis.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item "dist\Arrakis-Setup-${{ steps.ver.outputs.version }}.exe" "dist\Arrakis-Setup.exe"
           Get-ChildItem dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: Arrakis-Setup-${{ steps.ver.outputs.version }}
-          path: dist/*.exe
+          path: dist/Arrakis-Setup.exe
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           name: Arrakis ${{ steps.ver.outputs.version }}
-          files: dist/*.exe
+          files: dist/Arrakis-Setup.exe
           body: |
             ## Download
 
-            **[Arrakis-Setup-${{ steps.ver.outputs.version }}.exe](https://github.com/bhxuk/arrakis/releases/download/${{ github.ref_name }}/Arrakis-Setup-${{ steps.ver.outputs.version }}.exe)**, then double-click it. No admin rights needed.
+            **[Arrakis-Setup.exe](https://github.com/bhxuk/arrakis/releases/download/${{ github.ref_name }}/Arrakis-Setup.exe)**, then double-click it. No admin rights needed.
 
             Windows may show "Windows protected your PC" because the installer isn't code-signed. Click **More info** and then **Run anyway**.
 
