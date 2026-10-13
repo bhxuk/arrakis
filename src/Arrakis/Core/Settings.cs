@@ -132,6 +132,13 @@ namespace Arrakis.Core
         public double Volume { get; set; } = 0.4;
         public string Hotkey { get; set; } = "Ctrl+Alt+F";
         public string Label { get; set; } = "Deep work";
+        public string Task { get; set; } = "";
+        public string BlockMode { get; set; } = "Off";     // Off, Nudge, Minimise
+        public List<string> BlockApps { get; set; } = new List<string> { "steam.exe", "discord.exe", "epicgameslauncher.exe" };
+        public bool OpenOnStart { get; set; } = false;
+        public string StartLink { get; set; } = "";
+        public bool FromCalendar { get; set; } = false;
+        public string CalendarKeyword { get; set; } = "Focus";
     }
 
     public class BatterySettings
@@ -139,6 +146,8 @@ namespace Arrakis.Core
         public bool Enabled { get; set; } = true;
         public bool UnplugReminder { get; set; } = true;
         public int ReminderPercent { get; set; } = 80;
+        public bool LowAlert { get; set; } = true;
+        public int LowPercent { get; set; } = 20;
     }
 
     public class AppSettings

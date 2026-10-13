@@ -13,16 +13,25 @@ using Microsoft.Win32;
 
 namespace Arrakis.Modules
 {
+    public class FocusSession
+    {
+        public DateTime Start { get; set; }
+        public int Minutes { get; set; }
+        public string Task { get; set; } = "";
+        public string Label { get; set; } = "";
+    }
+
     public class FocusLog
     {
         public Dictionary<string, int> MinutesByDay { get; set; } = new Dictionary<string, int>();
+        public List<FocusSession> Sessions { get; set; } = new List<FocusSession>();
     }
 
     public class FocusModule : ModuleBase
     {
         public override string Id => "focus";
         public override string Name => "Focus";
-        public override string Description => "A timer pill that silences notifications while you work.";
+        public override string Description => "A focus timer that silences notifications, blocks distracting apps and tracks what you did.";
         public override string IconData => Icons.Focus;
         public override string ShortcutText => Settings.Current.Focus.Hotkey;
         public override bool IsEnabled { get => Settings.Current.Focus.Enabled; set => Settings.Current.Focus.Enabled = value; }
@@ -39,7 +48,14 @@ namespace Arrakis.Modules
         public bool IsFocusPhase => Current == Phase.Focus;
         public double Fraction => Total.TotalSeconds > 0 ? Remaining.TotalSeconds / Total.TotalSeconds : 0;
         public string RemainingText => ((int)Remaining.TotalMinutes).ToString("00") + ":" + Remaining.Seconds.ToString("00");
-        public string PhaseLabel => Current == Phase.Break ? "Break" : Paused ? "Paused" : S.Label;
+        public string PhaseLabel => Current == Phase.Break ? "Break" : Paused ? "Paused" : (string.IsNullOrWhiteSpace(_sessionTask) ? _sessionLabel ?? S.Label : _sessionTask);
+
+        private string _sessionTask;
+        private string _sessionLabel;
+        private int? _sessionMinutes;
+        private DispatcherTimer _watch;
+        private readonly Dictionary<string, DateTime> _nudged = new Dictionary<string, DateTime>();
+        private readonly HashSet<string> _calendarStarted = new HashSet<string>();
 
         public event Action Changed;
 
@@ -62,11 +78,61 @@ namespace Arrakis.Modules
             // If Arrakis was closed mid-session last time, give notifications back.
             if (File.Exists(FlagPath)) SetNotifications(true);
             Hotkeys.Register("focus", S.Hotkey, ToggleFromHotkey);
+            _watch = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            int ticks = 0;
+            _watch.Tick += (s, e) =>
+            {
+                if (IsActive && IsFocusPhase && !Paused) CheckDistractions();
+                if (++ticks % 15 == 0) CheckCalendar();
+            };
+            _watch.Start();
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+
+        private void CheckDistractions()
+        {
+            if (S.BlockMode == "Off" || S.BlockApps.Count == 0) return;
+            try
+            {
+                var fg = Native.GetForegroundWindow();
+                GetWindowThreadProcessId(fg, out uint pid);
+                string path = Native.GetProcessPath(pid);
+                if (string.IsNullOrEmpty(path)) return;
+                string exe = System.IO.Path.GetFileName(path).ToLowerInvariant();
+                if (!S.BlockApps.Any(b => b.Trim().ToLowerInvariant() == exe)) return;
+                string name = WindowTracker.FriendlyName(path);
+                if (S.BlockMode == "Minimise") Native.ShowWindow(fg, Native.SW_MINIMIZE);
+                if (!_nudged.TryGetValue(exe, out var last) || (DateTime.Now - last).TotalSeconds > 90)
+                {
+                    _nudged[exe] = DateTime.Now;
+                    App.Instance.Tray.Notify(S.BlockMode == "Minimise" ? name + " is on hold" : "Still focusing?", RemainingText + " left in your session. " + name + " is on your distraction list.");
+                }
+            }
+            catch { }
+        }
+
+        private void CheckCalendar()
+        {
+            if (!S.FromCalendar || !CalendarFeed.IsSet || IsActive) return;
+            string keyword = string.IsNullOrWhiteSpace(S.CalendarKeyword) ? "Focus" : S.CalendarKeyword.Trim();
+            foreach (var ev in CalendarFeed.Events)
+            {
+                if (ev.AllDay || ev.Title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                if (ev.Start > DateTime.Now || ev.End <= DateTime.Now.AddMinutes(1)) continue;
+                if ((DateTime.Now - ev.Start).TotalMinutes > 5 || !_calendarStarted.Add(ev.Uid)) continue;
+                int minutes = (int)Math.Round((ev.End - DateTime.Now).TotalMinutes);
+                StartFocus(ev.Title, Math.Max(5, Math.Min(240, minutes)));
+                App.Instance.Tray.Notify("Focus started from your calendar", ev.Title + " until " + ev.End.ToString("HH:mm"));
+                break;
+            }
         }
 
         protected override void OnStop()
         {
             End();
+            _watch?.Stop();
             Hotkeys.Unregister("focus");
         }
 
@@ -77,11 +143,18 @@ namespace Arrakis.Modules
             else TogglePause();
         }
 
-        public void StartFocus()
+        public void StartFocus() => StartFocus(null, null);
+
+        /// <summary>Starts a session. A label and length can come from a calendar event.</summary>
+        public void StartFocus(string label, int? minutes)
         {
+            _sessionTask = S.Task;
+            _sessionLabel = label;
+            _sessionMinutes = minutes;
             Current = Phase.Focus;
             Paused = false;
-            Total = Remaining = TimeSpan.FromMinutes(Math.Max(1, S.FocusMinutes));
+            Total = Remaining = TimeSpan.FromMinutes(Math.Max(1, minutes ?? S.FocusMinutes));
+            if (S.OpenOnStart && !string.IsNullOrWhiteSpace(S.StartLink)) Shell.Open(S.StartLink.Trim());
             _focusStartedAt = DateTime.Now;
             _focusedThisSession = TimeSpan.Zero;
             EnterFocusEffects();
@@ -109,11 +182,13 @@ namespace Arrakis.Modules
 
         public void End()
         {
-            if (Current == Phase.Focus) LogMinutes(_focusedThisSession);
+            if (Current == Phase.Focus) LogMinutes(_focusedThisSession, _sessionTask, _sessionLabel ?? S.Label);
             _timer.Stop();
             Current = Phase.Idle;
             Paused = false;
             Session = 1;
+            _sessionLabel = null;
+            _sessionMinutes = null;
             ExitFocusEffects();
             _pill?.Close();
             _pill = null;
@@ -141,7 +216,7 @@ namespace Arrakis.Modules
 
         private void FinishFocus(bool chime)
         {
-            LogMinutes(_focusedThisSession);
+            LogMinutes(_focusedThisSession, _sessionTask, _sessionLabel ?? S.Label);
             _focusedThisSession = TimeSpan.Zero;
             if (chime) SystemSounds.Asterisk.Play();
             ExitFocusEffects();
@@ -163,7 +238,7 @@ namespace Arrakis.Modules
             }
             Session++;
             Current = Phase.Focus;
-            Total = Remaining = TimeSpan.FromMinutes(Math.Max(1, S.FocusMinutes));
+            Total = Remaining = TimeSpan.FromMinutes(Math.Max(1, _sessionMinutes ?? S.FocusMinutes));
             _focusedThisSession = TimeSpan.Zero;
             EnterFocusEffects();
             App.Instance.Tray.Notify("Back to it", "Session " + Session + " of " + S.SessionsPerRound + " has started.");
@@ -217,11 +292,13 @@ namespace Arrakis.Modules
         private void Raise() => Changed?.Invoke();
 
         // ---------- Stats ----------
-        private static void LogMinutes(TimeSpan span)
+        private static void LogMinutes(TimeSpan span, string task, string label)
         {
             int minutes = (int)Math.Round(span.TotalMinutes);
             if (minutes < 1) return;
             var log = Settings.LoadFile<FocusLog>("focus.json");
+            log.Sessions.Add(new FocusSession { Start = DateTime.Now.AddMinutes(-minutes), Minutes = minutes, Task = task ?? "", Label = label ?? "" });
+            log.Sessions.RemoveAll(x => x.Start < DateTime.Today.AddDays(-366));
             string key = DateTime.Today.ToString("yyyy-MM-dd");
             log.MinutesByDay.TryGetValue(key, out int existing);
             log.MinutesByDay[key] = existing + minutes;
@@ -323,6 +400,43 @@ namespace Arrakis.Modules
             var volume = new MiniSlider(0, 1, S.Volume, Theme.Teal, 220) { Step = 0.05 };
             volume.ValueChanged += v => { S.Volume = v; _ambient.Volume = v; Settings.Save(); };
 
+            var task = UI.TextInput(S.Task, 300);
+            task.LostFocus += (s, e) => { S.Task = task.Text.Trim(); Settings.Save(); };
+            task.KeyDown += (s, e) => { if (e.Key == System.Windows.Input.Key.Enter) { S.Task = task.Text.Trim(); Settings.Save(); } };
+
+            var blockMode = UI.Combo(new[] { "Off", "Nudge me", "Minimise the app" }, S.BlockMode == "Nudge" ? "Nudge me" : S.BlockMode == "Minimise" ? "Minimise the app" : "Off", v =>
+            {
+                S.BlockMode = v == "Nudge me" ? "Nudge" : v == "Minimise the app" ? "Minimise" : "Off";
+                Settings.Save();
+            });
+            var blockList = UI.TextInput(string.Join(", ", S.BlockApps), 320);
+            blockList.LostFocus += (s, e) =>
+            {
+                S.BlockApps = blockList.Text.Split(',').Select(x => x.Trim().ToLowerInvariant()).Where(x => x.Length > 0).Select(x => x.EndsWith(".exe") ? x : x + ".exe").Distinct().ToList();
+                blockList.Text = string.Join(", ", S.BlockApps);
+                Settings.Save();
+            };
+            var pickApp = FlatButton.Secondary("Add an app...", () =>
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Programs (*.exe)|*.exe" };
+                if (dlg.ShowDialog() != true) return;
+                string exe = System.IO.Path.GetFileName(dlg.FileName).ToLowerInvariant();
+                if (!S.BlockApps.Contains(exe)) S.BlockApps.Add(exe);
+                blockList.Text = string.Join(", ", S.BlockApps);
+                Settings.Save();
+            });
+            pickApp.MinHeight = 36;
+
+            var openOn = new ToggleSwitch(S.OpenOnStart, "Open something when focus starts");
+            openOn.Toggled += v => { S.OpenOnStart = v; Settings.Save(); };
+            var link = UI.TextInput(S.StartLink, 320);
+            link.LostFocus += (s, e) => { S.StartLink = link.Text.Trim(); Settings.Save(); };
+
+            var fromCal = new ToggleSwitch(S.FromCalendar, "Start from calendar");
+            fromCal.Toggled += v => { S.FromCalendar = v; Settings.Save(); };
+            var keyword = UI.TextInput(S.CalendarKeyword, 160);
+            keyword.LostFocus += (s, e) => { S.CalendarKeyword = string.IsNullOrWhiteSpace(keyword.Text) ? "Focus" : keyword.Text.Trim(); Settings.Save(); };
+
             var label = UI.TextInput(S.Label, 200);
             label.LostFocus += (s, e) => { S.Label = string.IsNullOrWhiteSpace(label.Text) ? "Deep work" : label.Text.Trim(); Settings.Save(); Render(); Raise(); };
 
@@ -375,10 +489,27 @@ namespace Arrakis.Modules
 
             return UI.V(16,
                 UI.Card(top, 28),
+                UI.Card(UI.SettingRow("What are you working on?", "Optional. Shown on the pill and saved with each session, so you can see what you did.", task), 8),
                 UI.Label("Ambient sound"),
                 UI.Card(UI.V(10, soundRow, UI.H(10, UI.GridIcon(Icons.Volume, 18, Theme.Muted), volume))),
                 UI.Label("Last 7 days"),
                 UI.Card(BuildChart()),
+                UI.Label("Your report"),
+                FocusReport.Build(),
+                UI.Label("Distractions"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("When you open a distracting app", "Arrakis watches for these apps during focus time (not breaks).", blockMode),
+                    UI.Divider(),
+                    UI.SettingRow("Distracting apps", "Program names, separated by commas.", UI.V(6, blockList, pickApp))), 8),
+                UI.Label("Starting a session"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("Open a playlist or page", "For example a Spotify playlist link, a YouTube lo-fi stream or a document you're working on.", openOn),
+                    UI.Divider(),
+                    UI.SettingRow("Link", null, link),
+                    UI.Divider(),
+                    UI.SettingRow("Start from your calendar", "When an event with this word in its title begins, focus starts and runs until the event ends. Connect your calendar in Arrakis > Widgets.", fromCal),
+                    UI.Divider(),
+                    UI.SettingRow("Word to look for", null, keyword)), 8),
                 UI.Label("Settings"),
                 settingsCard);
         }
