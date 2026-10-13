@@ -1,5 +1,55 @@
 # What's new
 
+## 1.2.0 (13 October 2026)
+
+Something new in every module, and a few things that work across all of them.
+
+**Everywhere**
+- **Command bar**: press Alt+Space to find apps, files, Windows settings and clipboard items, work out sums,
+  start a focus session, switch power modes, load a widget layout or search the web.
+- **Light theme** and **six accent colours**, or match Windows.
+- **Automatic updates**: new versions install quietly and Arrakis reopens. Never during a focus session.
+- **Backup**: export everything to one file and import it on another PC.
+
+**Dock**
+- Live window previews when you rest the mouse on an app, with a close button on each.
+- Window counts under apps with more than one window open.
+- Folder stacks, starting with Downloads. Drop any folder on the dock to add it.
+- Drag an app, shortcut or file on to the dock to pin it.
+- Optionally, a dock on every screen showing that screen's windows.
+
+**Widgets**
+- Seven new widgets: agenda, to-do list, quick launch, world clocks, photo frame, stocks and headlines from any news feed.
+- Connect your calendar with an .ics link. Busy days are marked, and you get a heads-up 10 minutes before each event.
+- Small, medium and large sizes, snap to grid, and saved layouts you can switch between.
+
+**Wallpaper**
+- Clouds, rain, snow, fog and storms appear when they're happening outside.
+- The sun and moon move across the sky through the day.
+- Your own photos, as a slideshow from a folder or one for each time of day.
+- Each screen gets a picture drawn at its own size.
+
+**Clipboard**
+- Snippets with shortcodes that expand as you type in any app, with {date}, {time} and {clipboard}.
+- Paste as UPPERCASE, lowercase, Title Case, Sentence case, one line, list to commas and back, sorted, without duplicates,
+  or with link tracking removed.
+- Collections, to group items into your own lists.
+- Card numbers, bank details and passwords are hidden and deleted after a minute.
+- Encrypted sync between PCs through a shared folder.
+
+**Focus**
+- Keep distracting apps away with a nudge, or minimise them straight away.
+- Add what you're working on, shown on the pill and saved with each session.
+- Open a playlist, page or document when a session starts.
+- Start sessions from calendar events with a word like "Focus" in the title.
+- A weekly report with trends, your best day, longest streak, eight weeks of history and top tasks.
+
+**Battery**
+- Tips based on how you charge.
+- A low-battery alert that names the apps using the most power.
+- Switch power modes: Battery saver, Balanced or Best performance.
+- A one-page health report to print or save as a PDF.
+
 ## 1.1.0 (13 October 2026)
 
 A much bigger screenshot tool.

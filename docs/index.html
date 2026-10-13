@@ -164,7 +164,7 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
 .ticks{list-style:none;margin-top:18px;display:grid;gap:10px}
 .ticks li{position:relative;padding-left:28px;color:#dcdad5;font-size:15.5px}
 .ticks li::before{content:"";position:absolute;left:2px;top:.5em;width:12px;height:7px;border-left:2.4px solid var(--teal);border-bottom:2.4px solid var(--teal);transform:rotate(-45deg)}
-.ticks kbd,.modes kbd{font-family:var(--body);font-size:12.5px;font-weight:700;background:rgba(255,255,255,.09);border:1px solid var(--line2);border-bottom-width:2px;padding:1px 7px;border-radius:7px}
+.ticks kbd,.modes kbd,.studio-copy p kbd{font-family:var(--body);font-size:12.5px;font-weight:700;background:rgba(255,255,255,.09);border:1px solid var(--line2);border-bottom-width:2px;padding:1px 7px;border-radius:7px}
 .modes{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:44px}
 .modes div{background:var(--bg);padding:16px 12px;text-align:center}
 .modes b{display:block;font-size:15px}
@@ -173,6 +173,7 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
 .toolgrid div{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px}
 .toolgrid h3{font-size:17px;margin-bottom:6px}
 .toolgrid p{color:var(--muted);font-size:14.5px}
+.panel code{font-size:13px;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:6px}
 @media (max-width:860px){.studio-grid{grid-template-columns:1fr;gap:24px}.modes{grid-template-columns:repeat(3,1fr)}.toolgrid{grid-template-columns:1fr}}
 @media (max-width:480px){.modes{grid-template-columns:repeat(2,1fr)}}
 
@@ -189,6 +190,7 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
   <nav aria-label="Main">
     <a class="brand" href="#top"><img src="images/icon.png" alt="">Arrakis</a>
     <a class="link" href="#tour">Tour</a>
+    <a class="link" href="#new">What's new</a>
     <a class="link" href="#studio">Screenshots</a>
     <a class="link" href="#install">Install</a>
     <a class="link" href="https://github.com/bhxuk/arrakis">GitHub</a>
@@ -200,9 +202,9 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
 <header class="hero" id="top">
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap">
-    <a class="badge" href="#studio"><span>New in 1.1</span>A full screenshot studio</a>
+    <a class="badge" href="#new"><span>New in 1.2</span>Something new in every module</a>
     <h1>Your whole desktop,<br><span class="grad">finally yours.</span></h1>
-    <p class="lead">A dock, desktop widgets, a wallpaper that follows the sun, a proper clipboard, a full screenshot studio, a focus timer and battery health. For Windows 10 and 11. Switch on only what you want.</p>
+    <p class="lead">A dock, desktop widgets, a wallpaper that follows the sun and the weather, a clipboard with snippets, a full screenshot studio, a focus timer and battery health, with a command bar to reach it all. For Windows 10 and 11. Switch on only what you want.</p>
     <div class="cta">
       <a class="btn primary" href="https://github.com/bhxuk/arrakis/releases/latest/download/Arrakis-Setup.exe">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
@@ -264,30 +266,30 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
 
     <div class="panel" role="tabpanel" id="p-hub" aria-labelledby="t-hub">
       <div><h3>The hub</h3><p>One window with a card for every module. Flip the switch to turn it on, click the card for its settings.</p>
-        <ul><li>Lives quietly by the clock</li><li>Starts with Windows if you like</li><li>Checks GitHub for updates</li></ul></div>
+        <ul><li>Lives quietly by the clock</li><li>Dark or light, with six accent colours</li><li>Updates itself quietly</li><li>Back up everything to move to a new PC</li></ul></div>
       <div class="frame"><img src="images/hub.png" width="1920" height="1200" alt="The Arrakis hub with a card and switch for each module"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-dock" aria-labelledby="t-dock" hidden>
-      <div><h3>Dock</h3><p>Pinned and open apps with a running dot under each. Icons magnify as you glide across them.</p>
-        <ul><li>Click to switch, click again to minimise</li><li>Music and focus timer cards alongside</li><li>Floating glass, minimal pill or edge bar</li><li>Can replace the taskbar, and always gives it back</li></ul></div>
-      <div class="frame"><img src="images/dock.png" width="1920" height="1200" alt="The dock magnifying under the mouse, with the three dock styles below" loading="lazy"></div>
+      <div><h3>Dock</h3><p>Pinned and open apps that magnify as you glide across them. Rest on one to see live previews of its windows.</p>
+        <ul><li>Window previews and window counts</li><li>Folder stacks, starting with Downloads</li><li>Drag anything on to pin it</li><li>A dock on every screen if you like</li><li>Can replace the taskbar, and always gives it back</li></ul></div>
+      <div class="frame"><img src="images/dock.png" width="1920" height="1200" alt="The dock with live previews of two browser windows and the Downloads folder stack open" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-widgets" aria-labelledby="t-widgets" hidden>
-      <div><h3>Widgets</h3><p>Clock, weather, calendar, system rings, battery, now playing, notes and countdowns. They sit behind your windows like part of the wallpaper.</p>
-        <ul><li>Drag anywhere, they remember</li><li>Glass, Solid or Outline styles</li><li>Weather with no account needed</li></ul>
+      <div><h3>Widgets</h3><p>15 widgets that sit behind your windows like part of the wallpaper, from clocks and weather to to-dos, stocks and headlines.</p>
+        <ul><li>Your calendar, with a heads-up before meetings</li><li>World clocks, photo frame, quick launch</li><li>Small, medium or large, snapped to a grid</li><li>Save layouts like Work and Gaming</li></ul>
         <span class="shortcut"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>W</kbd> edit widgets</span></div>
-      <div class="frame"><img src="images/widgets.png" width="1920" height="1200" alt="Widgets in edit mode with one being dragged" loading="lazy"></div>
+      <div class="frame"><img src="images/widgets.png" width="1920" height="1200" alt="World clocks, agenda, quick launch, stocks, a to-do list, headlines and a photo frame, with a meeting alert" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-wall" aria-labelledby="t-wall" hidden>
       <div><h3>Wallpaper</h3><p>Dawn, day, sunset and night scenes drawn at your screen's exact size, changing with real sunrise and sunset where you live.</p>
-        <ul><li>Or keep one scene you love</li><li>Or Bing's photo of the day</li><li>Your old wallpaper comes back when you switch it off</li></ul></div>
+        <ul><li>Rain, snow, fog and storms when it's happening outside</li><li>A sun that moves across the sky</li><li>Or your own photos, or Bing's photo of the day</li><li>Every screen gets its own</li></ul></div>
       <div class="frame"><img src="images/wallpaper.png" width="1920" height="1200" alt="The wallpaper page with dawn, day, sunset and night scenes" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-clip" aria-labelledby="t-clip" hidden>
       <div><h3>Clipboard</h3><p>Everything you copy, searchable. Links, colours and images are recognised automatically.</p>
-        <ul><li>Pin the things you paste every day</li><li>Stack several copies and paste them together</li><li>Paste as plain text with Shift+Enter</li><li>Private copies from password managers are skipped</li></ul>
+        <ul><li>Snippets: type <code>;addr</code> anywhere for your address</li><li>Paste as UPPERCASE, one line, sorted and more</li><li>Collections, pins and a paste stack</li><li>Card numbers and passwords hidden, then deleted</li><li>Encrypted sync between your PCs</li></ul>
         <span class="shortcut"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>V</kbd> open clipboard</span></div>
-      <div class="frame"><img src="images/clipboard.png" width="1920" height="1200" alt="The clipboard panel with search, filters and pinned items" loading="lazy"></div>
+      <div class="frame"><img src="images/clipboard.png" width="1920" height="1200" alt="The clipboard panel filtered to snippets with the Paste as menu open" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-cap" aria-labelledby="t-cap" hidden>
       <div><h3>Capture</h3><p>A full screenshot studio: grab an area, a window or every screen, then mark it up with 14 tools.</p>
@@ -298,23 +300,62 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
     </div>
     <div class="panel" role="tabpanel" id="p-focus" aria-labelledby="t-focus" hidden>
       <div><h3>Focus</h3><p>A small pill counts down at the top of your screen while everything else goes quiet.</p>
-        <ul><li>Notifications silenced, dock hidden, widgets dimmed</li><li>Rain, ocean, brown or white noise</li><li>Breaks start on their own</li><li>Your week and your streak</li></ul>
+        <ul><li>Notifications silenced, dock hidden, widgets dimmed</li><li>Distracting apps nudged or minimised</li><li>Starts from your calendar, opens your playlist</li><li>A weekly report of where your time went</li></ul>
         <span class="shortcut"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>F</kbd> start focus</span></div>
       <div class="frame"><img src="images/focus.png" width="1920" height="1200" alt="A focus session with a timer ring and a weekly chart" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-bat" aria-labelledby="t-bat" hidden>
       <div><h3>Battery</h3><p>Windows hides this in a text report. Arrakis puts it on one clear page.</p>
-        <ul><li>Health compared with when it was new</li><li>Charge cycles and a 7-day chart</li><li>A nudge to unplug at 80%, or your own limit</li></ul></div>
-      <div class="frame"><img src="images/battery.png" width="1920" height="1200" alt="Battery health, capacity, cycles and a charge chart" loading="lazy"></div>
+        <ul><li>Health, cycles and a 7-day chart</li><li>Tips based on how you charge</li><li>Low-battery alerts that name the culprits</li><li>Power modes in one click, and a printable report</li></ul></div>
+      <div class="frame"><img src="images/battery.png" width="1920" height="1200" alt="Battery health, tips, the three power modes and the low-battery alert" loading="lazy"></div>
     </div>
     <p class="renders">Screens are renders of the app's layouts. Your apps, weather and numbers will be your own.</p>
+  </div>
+</section>
+
+<section id="new">
+  <div class="wrap">
+    <div class="center reveal">
+      <p class="kicker">New in 1.2</p>
+      <h2>Something new<br>in every module.</h2>
+      <p class="intro">Plus a command bar that reaches all of it, a light theme, and updates that install themselves.</p>
+    </div>
+
+    <div class="studio-grid reveal">
+      <div class="frame"><img src="images/commandbar.png" width="1920" height="1200" alt="The command bar working out a sum, with apps, actions, a file, a Windows setting and a clipboard item below" loading="lazy"></div>
+      <div class="studio-copy">
+        <h3>One box for everything</h3>
+        <p>Press <kbd>Alt</kbd>+<kbd>Space</kbd> anywhere. Find apps, files and Windows settings, pull up something you copied, or type a sum and press Enter to copy the answer.</p>
+        <ul class="ticks"><li>Start a 25, 50 or 90 minute focus session</li><li>Switch power modes or widget layouts</li><li>Take a screenshot or open the clipboard</li><li>Search the web for anything else</li></ul>
+      </div>
+    </div>
+
+    <div class="toolgrid reveal" style="margin-top:44px">
+      <div><h3>Dock</h3><p>Live window previews, window counts, folder stacks, drag to pin, and a dock on every screen.</p></div>
+      <div><h3>Widgets</h3><p>Agenda, to-do, quick launch, world clocks, photo frame, stocks and headlines. Calendar sync with meeting alerts, sizes, snapping and layouts.</p></div>
+      <div><h3>Wallpaper</h3><p>Weather that matches outside, a sun that moves through the day, your own photos, and a picture for each screen.</p></div>
+      <div><h3>Clipboard</h3><p>Snippets with shortcodes, Paste as, collections, card numbers and passwords auto-deleted, and encrypted sync between PCs.</p></div>
+      <div><h3>Focus</h3><p>Block distracting apps, note what you're working on, open a playlist, start from your calendar, and see a weekly report.</p></div>
+      <div><h3>Battery</h3><p>Charging tips, low-battery alerts that name the apps draining it, power modes and a printable health report.</p></div>
+    </div>
+
+    <div class="studio-grid reveal">
+      <div class="studio-copy">
+        <h3>Light or dark, your colour</h3>
+        <p>Choose Dark, Light or Match Windows, and one of six accent colours for buttons, switches and highlights.</p>
+        <ul class="ticks"><li>Updates download and install quietly</li><li>Never in the middle of a focus session</li><li>Export everything to one file for a new PC</li></ul>
+      </div>
+      <div class="frame"><img src="images/light.png" width="1920" height="1200" alt="The Arrakis hub in the light theme with appearance options" loading="lazy"></div>
+    </div>
+
+    <p class="renders" style="text-align:center;margin-top:28px"><a href="https://github.com/bhxuk/arrakis/blob/main/CHANGELOG.md" style="color:var(--amber);font-weight:700;text-decoration:none">Read the full list of changes &rarr;</a></p>
   </div>
 </section>
 
 <section id="studio">
   <div class="wrap">
     <div class="center reveal">
-      <p class="kicker">New in 1.1 · Capture</p>
+      <p class="kicker">Capture</p>
       <h2>A screenshot studio,<br>built right in.</h2>
       <p class="intro">Capture anything on screen, mark it up beautifully and share it in seconds. No extra app to install.</p>
     </div>
@@ -360,17 +401,17 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
       <div class="b-wide">
         <h3>Keyboard first</h3><p>Everything you use often is one shortcut away, from anywhere.</p>
         <div class="keys">
+          <div>Command bar <kbd>Alt+Space</kbd></div>
           <div>Clipboard <kbd>Ctrl+Alt+V</kbd></div>
           <div>Screenshot area <kbd>Ctrl+Alt+S</kbd></div>
           <div>Screenshot window <kbd>Ctrl+Alt+D</kbd></div>
           <div>Focus <kbd>Ctrl+Alt+F</kbd></div>
           <div>Edit widgets <kbd>Ctrl+Alt+W</kbd></div>
-          <div>Full screen <kbd>Ctrl+Alt+A</kbd></div>
-        </div>
+                  </div>
       </div>
       <div class="b-small"><span class="ic teal" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></span><h3>Taskbar safety net</h3><p>Hide the taskbar if you like. It always comes back when Arrakis closes.</p></div>
       <div class="b-mid">
-        <h3>Four scenes, one sun</h3><p>Sunrise and sunset are worked out for your city every day.</p>
+        <h3>Four scenes, one sun</h3><p>Sunrise and sunset are worked out for your city every day, and the sky matches the weather outside.</p>
         <div class="scenes">
           <div><span style="background:linear-gradient(#2B3A67,#E58F8F 60%,#F6C9A0)"></span><small>Dawn</small></div>
           <div><span style="background:linear-gradient(#4C8FD6,#9CCBEF 60%,#DCEFFA)"></span><small>Day</small></div>
@@ -380,7 +421,7 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
       </div>
       <div class="b-mid"><span class="ic coral" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0M20 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0"/></svg></span><h3>Works with your music</h3><p>Spotify, browsers, Media Player and anything else in Windows' media controls shows up in the dock and the widget.</p></div>
       <div class="b-small"><span class="ic amber" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span><h3>No extra downloads</h3><p>Everything it needs is built in, even the focus sounds.</p></div>
-      <div class="b-small"><span class="ic teal" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9c-4.5-1-8-4-8-9V7z"/></svg></span><h3>Private by design</h3><p>Only the weather, an optional daily photo and update checks go online.</p></div>
+      <div class="b-small"><span class="ic teal" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9c-4.5-1-8-4-8-9V7z"/></svg></span><h3>Private by design</h3><p>No account and no tracking. Only things you switch on, like weather or your calendar, go online.</p></div>
       <div class="b-small"><span class="ic coral" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><h3>Open source</h3><p>Every line is on GitHub under the MIT licence.</p></div>
     </div>
   </div>
@@ -411,7 +452,9 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
       <h2 class="center" style="font-size:clamp(26px,3.4vw,36px);margin-bottom:24px">Questions</h2>
       <details><summary>Will it mess up my taskbar?</summary><p>Only if you ask it to hide it, and it always puts it back when Arrakis closes. If anything goes wrong, Start &gt; Arrakis &gt; Restore Windows taskbar brings it straight back.</p></details>
       <details><summary>Does it slow my PC down?</summary><p>Modules you switch off don't run at all, and the hub shows exactly how much memory Arrakis is using.</p></details>
-      <details><summary>What does it send over the internet?</summary><p>Only the weather (from Open-Meteo, if you set a city), Bing's photo of the day (only if you pick that wallpaper) and an update check on GitHub, which you can switch off.</p></details>
+      <details><summary>What does it send over the internet?</summary><p>Only what you switch on: the weather (from Open-Meteo, if you set a city), Bing's photo of the day, your calendar link, stock prices and news headlines if you add those widgets, and an update check on GitHub, which you can switch off. Nothing about you is sent anywhere.</p></details>
+      <details><summary>How does clipboard sync work?</summary><p>Pick a folder both PCs can see, like OneDrive or Dropbox, and the same password on each. Your history is encrypted on your PC before it's written there, and card numbers and passwords are never synced.</p></details>
+      <details><summary>How do updates work?</summary><p>Arrakis checks GitHub when it starts. If there's a new version it installs it quietly and reopens, unless you're in a focus session. You can turn this off in Settings.</p></details>
       <details><summary>How do I uninstall it?</summary><p>Settings &gt; Apps, like any other app. Your settings stay in <code>%AppData%\Arrakis</code> in case you come back; delete that folder to remove them too.</p></details>
     </div>
 

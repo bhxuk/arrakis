@@ -5,6 +5,7 @@ Everything Arrakis can do, and how to do it. If something isn't covered here,
 
 - [Getting started](#getting-started)
 - [The hub](#the-hub)
+- [Command bar](#command-bar)
 - [Dock](#dock)
 - [Widgets](#widgets)
 - [Wallpaper](#wallpaper)
@@ -12,6 +13,7 @@ Everything Arrakis can do, and how to do it. If something isn't covered here,
 - [Capture](#capture)
 - [Focus](#focus)
 - [Battery](#battery)
+- [Updates and moving to a new PC](#updates-and-moving-to-a-new-pc)
 - [Shortcuts at a glance](#shortcuts-at-a-glance)
 - [Troubleshooting](#troubleshooting)
 
@@ -28,7 +30,7 @@ Everything Arrakis can do, and how to do it. If something isn't covered here,
 Arrakis lives in the **notification area** by the clock (you may need to click the **^** arrow to see it).
 
 - **Left-click** the icon to open the hub.
-- **Right-click** it for quick actions: clipboard, screenshot, focus, edit widgets, show the Windows taskbar, exit.
+- **Right-click** it for quick actions: command bar, clipboard, screenshots, focus, edit widgets, show the Windows taskbar, exit.
 
 Closing the hub window doesn't stop Arrakis; it carries on in the background. To stop it completely,
 right-click the icon and choose **Exit Arrakis**.
@@ -44,10 +46,36 @@ Arrakis is using and lets you check for updates.
 **Settings** (bottom of the sidebar) has:
 
 - **Start with Windows**
-- **Check for updates**: looks on GitHub for a newer version once a day.
+- **Appearance**: *Dark*, *Light* or *Match Windows*, and an accent colour (amber, teal, blue, pink, green or purple)
+  for buttons, switches and highlights. Click **Restart Arrakis now** to see the change everywhere.
+- **Command bar**: on or off, and its shortcut. See [Command bar](#command-bar).
+- **Updates**: check for updates, install them automatically, or update now. See [Updates](#updates-and-moving-to-a-new-pc).
+- **Backup**: export and import everything.
 - **Show the Windows taskbar now**: in case it's hidden and you want it back.
 - **Open settings folder**: where your settings, clipboard history and stats live (`%AppData%\Arrakis`).
 - **Exit Arrakis**
+
+<img src="images/light.png" width="760" alt="The hub in the light theme">
+
+## Command bar
+
+<img src="images/commandbar.png" width="760" alt="The command bar">
+
+Press **Alt+Space** anywhere and start typing. Use **Up** and **Down** to move, **Enter** to open, **Esc** to close.
+
+| Type | And you get |
+|---|---|
+| An app's name | The app, from your Start menu and installed apps |
+| A file name | Files from your Desktop, Documents, Downloads, Pictures, Music, Videos and recent files |
+| A setting, like *display*, *bluetooth* or *sound* | That page of Windows Settings |
+| A sum, like `999 * 1.25` or `(40 + 2) / 3` | The answer. Press Enter to copy it |
+| Words you copied earlier | Matching clipboard items. Enter copies it again |
+| *screenshot*, *focus*, *clipboard*, *widgets* | Arrakis actions, like **Focus for 50 minutes** or **Screenshot a window** |
+| *power* | **Power mode: Battery saver**, **Balanced** or **Best performance** |
+| *layout* | Your saved widget layouts |
+| Anything else | **Search the web** for it |
+
+If Alt+Space is already used by another app, pick a different shortcut in Arrakis > Settings > Command bar.
 
 ## Dock
 
@@ -67,7 +95,14 @@ The dock sits at the bottom of the screen and shows:
 | Click an app that isn't open | It opens |
 | Click an open app | It comes to the front. Click again to minimise it |
 | Click an app with several windows | Each click moves to the next window |
+| Rest the mouse on an open app | Live previews of its windows. Click one to switch, or the cross to close it |
 | Right-click an app | Pick a window, open a new one, pin or unpin, or close it |
+| Drag an app, shortcut or file on to the dock | It's pinned |
+| Drag a folder on to the dock | It's added as a folder stack |
+| Click a folder stack | Its newest files. Click one to open it, or **Open folder** |
+
+Apps with more than one window open show a small bar with the count under the icon instead of a dot.
+**Downloads** is added as a folder stack the first time you run Arrakis. Right-click a stack to open or unpin it.
 
 **Settings (Arrakis > Dock)**
 
@@ -77,7 +112,9 @@ The dock sits at the bottom of the screen and shows:
 - **Get out of the way**: the dock slides down when a window is maximised or full screen. Push the mouse to the
   very bottom of the screen to bring it back.
 - **Magnify on hover**, **Live activities** and **Icon size**.
-- **Pinned apps**: remove pins, or **Pin a program...** to choose any `.exe`.
+- **Window previews** and **Window counts**: both on to start with.
+- **A dock on every screen**: each monitor gets its own dock, showing the windows that are on that screen.
+- **Pinned apps** and **Folders**: remove them, or **Pin a program...** and **Add a folder...**.
 
 ## Widgets
 
@@ -92,6 +129,12 @@ system rings, now playing and a note.
   (press it again to hide them).
 - **Stop accidental moves**: right-click > Lock widgets.
 - **Add more**: Arrakis > Widgets, then click a tile.
+- **Resize**: right-click > Size > *Small*, *Medium* or *Large*.
+- **Line them up**: **Snap to grid** (Arrakis > Widgets) neatens their position when you let go.
+- **Each widget's own options**: right-click it. For example *Choose cities...* on world clocks or *Edit symbols...* on stocks.
+
+**Layouts**: set your widgets up the way you like, then in Arrakis > Widgets type a name like *Work* and click
+**Save current layout**. Switch between layouts there, or type *layout* in the command bar.
 
 | Widget | Notes |
 |---|---|
@@ -103,6 +146,22 @@ system rings, now playing and a note.
 | Now playing | Works with Spotify, browsers, Media Player and anything else that shows in Windows' media controls |
 | Notes | **Double-click** to type. Click away to save |
 | Countdown | Right-click > Edit countdown to set the name and date |
+| Agenda | Your next events from your calendar (see below) |
+| To-do list | Type and press Enter to add. Tick to finish. Right-click > Clear finished items |
+| Quick launch | Drag apps, files or folders on to it, or right-click > Add an app or file... |
+| World clocks | Right-click > Choose cities... Shows the time difference and whether it's tomorrow there |
+| Photo frame | Right-click > Choose folder... It shows your Pictures folder to start with and changes every few minutes |
+| Stocks | Right-click > Edit symbols... Prices come from Stooq, so use codes like AAPL.US, VOD.UK or ^UKX |
+| Headlines | Right-click > Change feed... and paste any RSS or Atom news feed. Click a headline to read it |
+
+**Connect your calendar**: in Arrakis > Widgets, paste your calendar's **.ics link** under *Calendar link*.
+
+- **Google Calendar**: Settings > click your calendar > *Secret address in iCal format*.
+- **Outlook.com**: Settings > Calendar > Shared calendars > *Publish a calendar* > copy the ICS link.
+- **iCloud**: share the calendar as a *Public Calendar* and copy the link.
+
+Then the calendar widget marks days with events (hover to see them), the agenda widget lists what's next, and
+**Meeting alerts** give you a notification 10 minutes before each event. Focus can use it too.
 
 ## Wallpaper
 
@@ -110,13 +169,22 @@ system rings, now playing and a note.
 
 Wallpaper is **off** until you switch it on, so Arrakis never changes your desktop without asking.
 
+Pick a **Mode**:
+
 - **Follow the sun**: dawn, day, sunset and night scenes change with the real sunrise and sunset where you are.
   Arrakis uses the city you set for the weather widget (or Birmingham, UK until you set one).
-- **Keep one scene**: click a scene, or pick it under **Mode**.
-- **Bing photo of the day**: a new photo each morning instead.
+- **Dawn**, **Day**, **Sunset** or **Night**: keep one scene.
+- **Your photos (slideshow)**: choose a folder (subfolders are included) and how often to change.
+- **Your photos for each time of day**: choose a photo for each of dawn, day, sunset and night, and they change with the sun.
+- **Bing photo of the day**: a new photo each morning.
 
-The scenes are drawn at your screen's exact resolution. When you switch Wallpaper off (or click
-**Put my old wallpaper back**), your original wallpaper comes back.
+With the scenes you can also switch on:
+
+- **Match the weather**: clouds, rain, snow, fog and storms appear when they're happening outside.
+- **Moving sun**: the sun travels across the sky through the day, and the moon at night.
+
+Every screen gets a picture drawn at its own size, and with your photos each screen gets a different one.
+When you switch Wallpaper off (or click **Put my old wallpaper back**), your original wallpaper comes back.
 
 ## Clipboard
 
@@ -143,8 +211,31 @@ You can also click an item to paste it, or right-click it for more options (copy
 **The stack** is for when you need several things in one go, for example a name, an address and a phone number.
 Add each one with Ctrl+S, then paste them all at once.
 
-**Privacy**: copies that password managers mark as private are never saved. History stays on your PC.
-Change the size, turn off image saving or clear everything in Arrakis > Clipboard.
+Right-click an item for **Paste**, **Paste as plain text**, **Paste as**, **Copy only**, **Add to collection**,
+**Open link** and **Remove from history**.
+
+**Paste as** changes the text as it goes in: *UPPERCASE*, *lowercase*, *Title Case*, *Sentence case*, *One line*,
+*List to commas*, *Commas to list*, *Remove link tracking* (takes `utm_` and similar off links), *Sort lines*
+and *Remove duplicate lines*.
+
+**Collections**: right-click > Add to collection > **New collection...** to make one, like *Work* or *Recipes*.
+Each collection gets its own filter at the top of the panel.
+
+**Snippets** are bits of text you type often, like your address or a sign-off. Add them in Arrakis > Clipboard >
+Snippets, each with a **shortcode**. Type the shortcode in any app (for example `;sig`) and it's replaced with the
+snippet. In a snippet, `{date}`, `{time}` and `{clipboard}` are filled in for you. They're also in the panel under
+the **Snippets** filter. A few examples are added to start you off.
+
+**Private items**: anything that looks like a card number, bank account (IBAN) or password is shown as dots, kept
+out of search and sync, and deleted after a minute (you can change how long). Right-click > **Keep it** if you need it.
+
+**Sync between PCs**: in Arrakis > Clipboard > Sync, choose a folder both PCs can see (OneDrive, Dropbox, Google Drive
+or a network drive) and set a password. Do the same on the other PC with the same password. History is encrypted
+before it's written to the folder and syncs every 3 minutes. Pinned items, snippets and collections come across too;
+private items never do.
+
+**Privacy**: copies that password managers mark as private are never saved. History stays on your PC unless you
+turn on sync. Change the size, turn off image saving or clear everything in Arrakis > Clipboard.
 
 ## Capture
 
@@ -255,13 +346,28 @@ and stop for breaks.
 
 **Settings**: session name, focus length, short and long breaks, and sessions per round.
 
-The **Last 7 days** chart shows how long you've focused each day, and your streak of days in a row.
+**What are you working on?** Type a task before you start. It shows on the pill and is saved with the session,
+so the report can show where your time went.
+
+**Distracting apps**: list programs like `steam.exe` or `discord.exe` (or click to pick one that's running), then choose
+what happens when one opens during focus time: **Nudge** (a reminder) or **Minimise** (straight out of the way).
+Breaks are left alone.
+
+**Open on start**: paste a link, like a Spotify playlist, a YouTube lo-fi stream or a document, and it opens each time a session starts.
+
+**Start from your calendar**: once your calendar is connected (Arrakis > Widgets), any event with *Focus* in its
+title (or a word you choose) starts a session that runs until the event ends.
+
+**Your week**: this week against last, the last 30 days, your best day, your longest streak, eight weeks of
+history, your top tasks and recent sessions.
+
+<img src="images/focus-report.png" width="760" alt="The focus report">
 
 ## Battery
 
 <img src="images/battery.png" width="760" alt="Battery">
 
-For laptops and tablets. On a desktop PC it just says there's no battery; switch it off on the Home page.
+For laptops and tablets. On a desktop PC it says there's no battery, but you can still switch **power modes** there.
 
 - **Health**: how much your battery holds now compared with when it was new.
 - **Holds when full**: the actual capacity in watt-hours.
@@ -270,11 +376,28 @@ For laptops and tablets. On a desktop PC it just says there's no battery; switch
 - **Unplug reminder**: a notification when charging reaches your chosen level (80% by default). Keeping a battery
   below 100% most of the time helps it last longer.
 - **Health over time**: recorded once a month.
+- **Tips for your battery**: after a day or two, Arrakis looks at how you charge and suggests changes, like
+  unplugging before bed if it sits at 100% overnight.
+- **Low battery alert**: a notification at the level you choose (20% by default) with the apps using the most power right then.
+- **Power mode**: *Battery saver*, *Balanced* or *Best performance*, the same as Windows' own power mode setting.
+- **Health report**: **Save a report** makes a one-page web page with health, capacity, cycles and a chart, ready to
+  print or save as a PDF. Handy when selling a laptop or making a warranty claim.
+
+## Updates and moving to a new PC
+
+**Updates**: Arrakis checks GitHub for a newer version when it starts. With **Install updates automatically** on
+(the default), it downloads and installs it quietly, then reopens. It never does this during a focus session.
+Turn it off in Arrakis > Settings, or click **Update now** whenever you like.
+
+**Moving to a new PC**: in Arrakis > Settings > Backup, click **Export...** to save one file with your settings,
+widgets and layouts, clipboard history, snippets, focus history and battery history. Install Arrakis on the other
+PC and click **Import...**. Arrakis restarts with everything in place.
 
 ## Shortcuts at a glance
 
 | Shortcut | Does |
 |---|---|
+| Alt+Space | Open the command bar |
 | Ctrl+Alt+V | Open the clipboard |
 | Ctrl+Alt+S | Screenshot of an area |
 | Ctrl+Alt+D | Screenshot of a window |
@@ -282,7 +405,7 @@ For laptops and tablets. On a desktop PC it just says there's no battery; switch
 | Ctrl+Alt+F | Start, pause or resume focus |
 | Ctrl+Alt+W | Show or hide widget remove buttons |
 
-You can change the clipboard and screenshot shortcuts in their settings pages. If a shortcut doesn't work,
+You can change the command bar, clipboard and screenshot shortcuts in their settings pages. If a shortcut doesn't work,
 another app is probably using it; Arrakis will tell you and you can pick a different one.
 
 ## Troubleshooting
@@ -295,6 +418,17 @@ Click **More info** > **Run anyway**. It appears for apps that aren't code-signe
 
 **A shortcut does nothing.**
 Another app may already be using it. Go to that module's page in Arrakis and choose a different one.
+
+**My calendar isn't showing.**
+Check the link ends in `.ics` and is the *secret* or *published* address, not the normal web page. Then right-click
+the agenda widget > **Refresh calendar**.
+
+**Snippets don't expand in one app.**
+Some apps running as administrator don't accept typing from other apps. Run Arrakis the same way, or paste the
+snippet from the clipboard panel instead.
+
+**Clipboard sync isn't picking things up.**
+Both PCs need the same folder and the same password. The sync status under Arrakis > Clipboard > Sync says when it last ran.
 
 **The weather says "Set your city".**
 Arrakis > Widgets > Weather city. Type a town and click **Set city**.
