@@ -519,10 +519,18 @@ namespace Arrakis.Modules
                 var xml = XDocument.Parse(await Http.GetStringAsync(url));
                 XNamespace atom = "http://www.w3.org/2005/Atom";
                 foreach (var it in xml.Descendants("item").Take(10))
-                    items.Add(((string)it.Element("title") ?? "").Trim(), ((string)it.Element("link") ?? "").Trim()));
+                {
+                    string t = ((string)it.Element("title") ?? "").Trim();
+                    string l = ((string)it.Element("link") ?? "").Trim();
+                    items.Add((t, l));
+                }
                 if (items.Count == 0)
                     foreach (var it in xml.Descendants(atom + "entry").Take(10))
-                        items.Add((((string)it.Element(atom + "title")) ?? "").Trim(), (string)it.Element(atom + "link")?.Attribute("href") ?? ""));
+                    {
+                        string t = ((string)it.Element(atom + "title") ?? "").Trim();
+                        string l = (string)it.Element(atom + "link")?.Attribute("href") ?? "";
+                        items.Add((t, l));
+                    }
             }
             catch (Exception ex) { Log.Write("News: " + ex.Message); }
             NewsCache[url] = (DateTime.Now, items);

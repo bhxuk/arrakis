@@ -55,8 +55,13 @@ namespace Arrakis.Core
     public class WallpaperSettings
     {
         public bool Enabled { get; set; } = false;
-        public string Mode { get; set; } = "Auto";        // Auto, Dawn, Day, Sunset, Night, Photo
+        public string Mode { get; set; } = "Auto";        // Auto, Dawn, Day, Sunset, Night, Photo (Bing), Folder, ScenePhotos
         public string OriginalWallpaper { get; set; } = "";
+        public bool MatchWeather { get; set; } = true;
+        public bool MovingSun { get; set; } = true;
+        public string PhotoFolder { get; set; } = "";
+        public int PhotoMinutes { get; set; } = 30;
+        public Dictionary<string, string> ScenePhotos { get; set; } = new Dictionary<string, string>();
     }
 
     public class ClipboardSettings
