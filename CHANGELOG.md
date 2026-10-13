@@ -1,5 +1,10 @@
 # What's new
 
+## 1.4.3 (13 October 2026)
+
+- New Arrakis icon: a golden desert planet with a thin ring. It's used for the app, the installer, the tray and the website.
+- New artwork on the website and in the README.
+
 ## 1.4.2 (13 October 2026)
 
 - **Glass window**: on Windows 11 the main Arrakis window now has a frosted-glass background, with your wallpaper

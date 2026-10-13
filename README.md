@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/icon.png" width="96" alt="Arrakis icon">
+<img src="docs/images/banner.jpg" alt="Arrakis: a golden desert planet with a thin ring, above the word ARRAKIS" width="900">
 
 # Arrakis
 
