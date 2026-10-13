@@ -115,19 +115,12 @@ namespace Arrakis
 
             if (Settings.Current.CheckForUpdates)
             {
+                // First check shortly after start-up, then every 6 hours for PCs that stay on for days.
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
                 timer.Tick += async (s, ev) =>
                 {
-                    timer.Stop();
-                    if (await Updates.Check())
-                    {
-                        if (Settings.Current.AutoUpdate && !Focus.IsActive)
-                        {
-                            Tray.Notify("Updating Arrakis to " + Updates.LatestVersion, "It'll be back in a few seconds.");
-                            await Updates.DownloadAndInstall();
-                        }
-                        else Tray.Notify("Arrakis " + Updates.LatestVersion + " is available", "Open Arrakis > Settings to install it.");
-                    }
+                    timer.Interval = TimeSpan.FromHours(6);
+                    if (Settings.Current.CheckForUpdates) await CheckForUpdate();
                 };
                 timer.Start();
             }
@@ -179,6 +172,41 @@ namespace Arrakis
         }
 
         /// <summary>Starts a fresh copy of Arrakis and closes this one (used after theme changes and restores).</summary>
+        private string _notifiedVersion;
+
+        /// <summary>Looks for a new version. Installs it straight away if automatic updates are on,
+        /// otherwise offers it in a notification and the tray menu, both of which install it with one click.</summary>
+        public async System.Threading.Tasks.Task CheckForUpdate()
+        {
+            if (!await Updates.Check()) return;
+            if (Settings.Current.AutoUpdate && !Focus.IsActive)
+            {
+                await InstallUpdate();
+                return;
+            }
+            Tray.ShowUpdateItem(Updates.LatestVersion);
+            if (_notifiedVersion == Updates.LatestVersion) return;
+            _notifiedVersion = Updates.LatestVersion;
+            Tray.Notify("Arrakis " + Updates.LatestVersion + " is available", "Click here to install it. Arrakis reopens by itself.", () => _ = InstallUpdate());
+        }
+
+        private bool _installing;
+
+        /// <summary>Downloads the new Setup.exe and installs it quietly. Arrakis closes and reopens on its own.</summary>
+        public async System.Threading.Tasks.Task<bool> InstallUpdate(Action<string> status = null)
+        {
+            if (_installing) return false;
+            _installing = true;
+            Tray.Notify("Updating Arrakis" + (Updates.LatestVersion != null ? " to " + Updates.LatestVersion : ""), "Downloading now. Arrakis will reopen in a few seconds.");
+            bool ok = await Updates.DownloadAndInstall(status);
+            if (!ok)
+            {
+                _installing = false;
+                Tray.Notify("Couldn't update Arrakis", "Try again from Arrakis > Settings > Updates.");
+            }
+            return ok;
+        }
+
         public void Restart()
         {
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath, "--restarting") { UseShellExecute = false }); }

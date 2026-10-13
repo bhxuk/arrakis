@@ -42,16 +42,39 @@ namespace Arrakis.Core
             });
             menu.Items.Add("Exit Arrakis", null, (s, e) => App.Instance.Quit());
             _icon.ContextMenuStrip = menu;
+            _icon.BalloonTipClicked += (s, e) => { var a = _onClick; _onClick = null; a?.Invoke(); };
+            _icon.BalloonTipClosed += (s, e) => _onClick = null;
             _icon.MouseClick += (s, e) =>
             {
                 if (e.Button == System.Windows.Forms.MouseButtons.Left) App.Instance.ShowHub();
             };
         }
 
-        public void Notify(string title, string text)
+        private Action _onClick;
+        private System.Windows.Forms.ToolStripMenuItem _update;
+
+        public void Notify(string title, string text) => Notify(title, text, null);
+
+        /// <summary>Shows a notification. If onClick is given, clicking the notification runs it.</summary>
+        public void Notify(string title, string text, Action onClick)
         {
+            _onClick = onClick;
             try { _icon.ShowBalloonTip(5000, title, text, System.Windows.Forms.ToolTipIcon.None); }
             catch { }
+        }
+
+        /// <summary>Adds (or updates) an "Install update" item at the top of the menu.</summary>
+        public void ShowUpdateItem(string version)
+        {
+            var menu = _icon.ContextMenuStrip;
+            if (_update == null)
+            {
+                _update = new System.Windows.Forms.ToolStripMenuItem();
+                _update.Click += (s, e) => _ = App.Instance.InstallUpdate();
+                menu.Items.Insert(0, _update);
+                menu.Items.Insert(1, new System.Windows.Forms.ToolStripSeparator());
+            }
+            _update.Text = "Install update " + version;
         }
 
         public void Dispose()

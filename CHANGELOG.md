@@ -1,5 +1,14 @@
 # What's new
 
+## 1.2.1 (13 October 2026)
+
+- **One-click updates everywhere**: the update button on the Home page now downloads and installs the new version
+  itself instead of opening the download page. Arrakis closes, updates and reopens on its own.
+- If automatic updates are off, the update notification installs it when you click it, and the tray menu
+  gets an **Install update** item.
+- Arrakis now checks for updates every 6 hours, not just when it starts, so PCs that stay on for days still get them.
+- Fixed the Install button in Settings > Updates checking again instead of installing.
+
 ## 1.2.0 (13 October 2026)
 
 Something new in every module, and a few things that work across all of them.

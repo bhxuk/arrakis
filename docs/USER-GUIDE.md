@@ -387,7 +387,12 @@ For laptops and tablets. On a desktop PC it says there's no battery, but you can
 
 **Updates**: Arrakis checks GitHub for a newer version when it starts. With **Install updates automatically** on
 (the default), it downloads and installs it quietly, then reopens. It never does this during a focus session.
-Turn it off in Arrakis > Settings, or click **Update now** whenever you like.
+It checks again every 6 hours, so a PC that stays on for days still gets updates.
+
+With automatic updates off, you'll get a notification instead: **click it** to install. You can also right-click
+the tray icon > **Install update**, or click **Check for updates** on the Home page or **Check now** in
+Arrakis > Settings, then **Install**. Every one of these downloads and installs the update for you; there's
+nothing to download yourself.
 
 **Moving to a new PC**: in Arrakis > Settings > Backup, click **Export...** to save one file with your settings,
 widgets and layouts, clipboard history, snippets, focus history and battery history. Install Arrakis on the other

@@ -177,7 +177,8 @@ charge levels, and a reminder to unplug at the level you choose.
 4. Arrakis opens on the hub. Switch on what you want.
 
 **Updates** install themselves: when a new version is out, Arrakis downloads it quietly and reopens (never in the
-middle of a focus session). You can turn this off in Arrakis > Settings.
+middle of a focus session). If you turn that off in Arrakis > Settings, you'll get a notification instead, and
+one click installs it. Either way there's nothing to download yourself.
 
 **New PC?** In Arrakis > Settings, choose **Export** to save everything (settings, widgets, clipboard, snippets,
 focus and battery history) to one file, then **Import** it on the other PC.

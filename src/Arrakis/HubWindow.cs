@@ -232,16 +232,20 @@ namespace Arrakis
             var check = FlatButton.Secondary("Check for updates");
             check.BorderBrush = Theme.Brush(Color.FromArgb(0x66, 0xFF, 0xB5, 0x47));
             check.Foreground = Theme.Amber;
+            bool ready = false;
             check.Click += async (s, e) =>
             {
-                check.Content = "Checking...";
-                bool newer = await Updates.Check();
-                if (newer)
+                check.IsEnabled = false;
+                if (!ready)
                 {
-                    check.Content = "Get " + Updates.LatestVersion;
-                    Shell.Open(Updates.LatestUrl);
+                    check.Content = "Checking...";
+                    ready = await Updates.Check();
+                    check.Content = ready ? "Install " + Updates.LatestVersion : Updates.LatestVersion == null ? "Couldn't check" : "Up to date";
+                    check.IsEnabled = true;
+                    return;
                 }
-                else check.Content = Updates.LatestVersion == null ? "Couldn't check" : "Up to date";
+                bool ok = await App.Instance.InstallUpdate(t => check.Content = t);
+                if (!ok) { check.Content = "Try again"; check.IsEnabled = true; }
             };
             void Refresh()
             {
@@ -339,26 +343,25 @@ namespace Arrakis
             var updStatus = UI.Text("You're on " + Updates.CurrentText + ".", 12, Theme.Muted);
             var updBtn = FlatButton.Secondary("Check now");
             updBtn.MinHeight = 36;
+            bool updReady = false;
             updBtn.Click += async (s, e) =>
             {
                 updBtn.IsEnabled = false;
-                updStatus.Text = "Checking...";
-                if (await Updates.Check())
+                if (!updReady)
                 {
-                    updStatus.Text = "Arrakis " + Updates.LatestVersion + " is available.";
-                    updBtn.Content = "Install " + Updates.LatestVersion;
-                    updBtn.IsEnabled = true;
-                    updBtn.Click += async (s2, e2) =>
+                    updStatus.Text = "Checking...";
+                    updReady = await Updates.Check();
+                    if (updReady)
                     {
-                        updBtn.IsEnabled = false;
-                        await Updates.DownloadAndInstall(t => updStatus.Text = t);
-                    };
-                }
-                else
-                {
-                    updStatus.Text = Updates.LatestVersion == null ? "Couldn't reach GitHub." : "You're up to date (" + Updates.CurrentText + ").";
+                        updStatus.Text = "Arrakis " + Updates.LatestVersion + " is available. Click to download and install it. Arrakis reopens by itself.";
+                        updBtn.Content = "Install " + Updates.LatestVersion;
+                    }
+                    else updStatus.Text = Updates.LatestVersion == null ? "Couldn't reach GitHub." : "You're up to date (" + Updates.CurrentText + ").";
                     updBtn.IsEnabled = true;
+                    return;
                 }
+                bool ok = await App.Instance.InstallUpdate(t => updStatus.Text = t);
+                if (!ok) { updBtn.Content = "Try again"; updBtn.IsEnabled = true; }
             };
 
             // Backup
