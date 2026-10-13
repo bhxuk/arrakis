@@ -134,14 +134,19 @@ Right-click any icon > **Dock settings...** to jump straight to them.
 
 **Taskbar and screens**
 
-- **Hide the Windows taskbar**: use the dock instead. The taskbar is hidden only on screens that have a dock, and
-  maximised windows then use the whole screen. It always comes back when Arrakis exits.
+- **Hide the Windows taskbar**: use the dock instead. Arrakis turns on Windows' own *Automatically hide the taskbar*
+  setting, so maximised windows use the whole of every screen, then hides the taskbar completely on screens that have a
+  dock. On any other screen it stays auto-hidden: push the mouse to that screen's edge and it slides in. Your original
+  taskbar setting is put back when Arrakis exits.
 - **Put the taskbar back**: brings the Windows taskbar back on every screen straight away (and turns the switch above off).
   The tray menu has the same option, and so does Start > Arrakis > Restore Windows taskbar, which works even if Arrakis isn't running.
-- **A dock on every screen**: each monitor gets its own dock, showing the windows that are on that screen. With the
-  taskbar hidden, it's hidden on all of them.
+- **A dock on every screen**: each monitor gets its own dock, showing the windows that are on that screen. Turn this
+  on with **Hide the Windows taskbar** to have no taskbar on any screen.
 - **Keep windows clear of the dock**: maximised windows stop at the dock instead of going underneath it (the dock then
-  doesn't need to slide away).
+  doesn't need to slide away). The dock registers with Windows as an app bar, the same way the taskbar reserves its space.
+
+If Windows keeps bringing the taskbar back (for example while Explorer restarts), Arrakis stops hiding it after a few
+tries rather than fight it, tells you, and tries again next time it starts.
 
 **Features**: Live activities, Window previews and Window counts. Underneath are your **Pinned apps** and **Folder stacks**:
 remove them, or **Pin a program...** and **Pin a folder...**.

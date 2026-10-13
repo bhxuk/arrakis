@@ -72,7 +72,7 @@ What's playing and your focus timer sit next to it.
 - **Five styles**: Floating, Minimal pill, Islands (pinned, open and folders in separate groups), Edge bar and Compact bar.
 - **Six themes**: Match Arrakis, Dark glass, Light glass, Solid, Clear and Accent, with a see-through slider.
 - **Bottom, left or right** of the screen.
-- **Replace the taskbar**: hide the Windows taskbar on every screen that has a dock. **Put the taskbar back** is one click away in Arrakis > Dock, the tray menu and the Start menu.
+- **Replace the taskbar**: hidden on screens with a dock and auto-hidden on the rest, using Windows' own auto-hide so maximised windows fill every screen. **Put the taskbar back** is one click away in Arrakis > Dock, the tray menu and the Start menu.
 - **Keep windows clear of the dock**: maximised windows stop at the dock instead of going underneath.
 
 - **Window previews**: rest the mouse on an open app to see live pictures of its windows. Click one to switch, or close it from there.

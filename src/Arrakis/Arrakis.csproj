@@ -11,7 +11,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>Arrakis</AssemblyName>
     <RootNamespace>Arrakis</RootNamespace>
-    <Version>1.4.0</Version>
+    <Version>1.4.1</Version>
     <Product>Arrakis</Product>
     <Company>bhxuk</Company>
     <Copyright>Copyright (c) 2026 bhxuk</Copyright>

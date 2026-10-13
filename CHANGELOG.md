@@ -1,5 +1,23 @@
 # What's new
 
+## 1.4.1 (13 October 2026)
+
+An important fix if you hide the taskbar. Please update.
+
+- **Fixed: the PC freezing and Explorer restarting with "Hide the Windows taskbar" on.** Arrakis 1.4.0 kept resetting
+  each screen's space every two seconds, which Explorer kept undoing. The two fought, flooding Windows with change
+  messages. Arrakis now switches on Windows' own *Automatically hide the taskbar* setting once and never touches screen
+  space directly. Your original setting is put back when Arrakis exits.
+- **Fixed: the taskbar on other screens not going away.** It's now hidden on screens with a dock and auto-hidden on the
+  others, so every screen gets its full space. Turn on *A dock on every screen* to hide it everywhere.
+- **Fixed: the taskbar flickering back** when screens changed. Arrakis now waits for screen changes to settle and leaves
+  the taskbar alone while it rebuilds the docks.
+- If Windows keeps bringing the taskbar back, Arrakis stops trying after a few attempts and tells you, rather than fight it.
+- **Keep windows clear of the dock** now registers the dock with Windows as an app bar, the same way the taskbar
+  reserves its space, so Windows manages it.
+- Start > Arrakis > **Restore Windows taskbar** now also puts the auto-hide setting back and makes Windows recalculate
+  every screen, which clears anything 1.4.0 left behind.
+
 ## 1.4.0 (13 October 2026)
 
 **Dock**
@@ -15,9 +33,7 @@
 - Previews, folder stacks and menus open beside the dock when it's on the left or right.
 
 **Taskbar and multiple screens**
-- Hiding the taskbar now works properly on every screen. Each screen's space is managed separately, so maximised windows
-  fill the screen and the dock sits at the very edge, on every monitor.
-- The taskbar is only hidden on screens that have a dock, so no screen is left without one.
+- Hiding the taskbar on every screen (this caused freezing on some PCs and was replaced in 1.4.1).
 - New **Put the taskbar back** button in Arrakis > Dock. Restore Windows taskbar in the Start menu now fixes every screen too.
 
 **Wallpaper**
