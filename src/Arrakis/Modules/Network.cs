@@ -90,6 +90,7 @@ namespace Arrakis.Modules
             var up = UI.Text("-", 34, Theme.Text, FontWeights.SemiBold, true);
             var ping = UI.Text("-", 34, Theme.Text, FontWeights.SemiBold, true);
             var stage = UI.Text("Takes about 20 seconds and uses roughly 100 to 300 MB on a fast connection.", 13, Theme.Muted);
+            stage.TextWrapping = TextWrapping.Wrap;
             var bar = new Border { Height = 6, CornerRadius = new CornerRadius(3), Background = Theme.Amber, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
             var track = new Border { Height = 6, CornerRadius = new CornerRadius(3), Background = Theme.Subtle, Child = bar, Margin = new Thickness(0, 10, 0, 0) };
             UIElement Gauge(string label, TextBlock value, string unit) => UI.V(2, UI.Label(label), UI.H(6, value, UI.Text(unit, 14, Theme.Muted).WithMargin(new Thickness(0, 14, 0, 0))));
@@ -137,7 +138,7 @@ namespace Arrakis.Modules
                     up.Text = r.UpMbps.ToString(r.UpMbps < 10 ? "0.0" : "0");
                     ping.Text = r.PingMs.ToString();
                     r.Network = info.Kind == "Wi-Fi" ? info.Ssid : info.Kind;
-                    stage.Text = "Jitter " + r.JitterMs + " ms. " + Verdict(r);
+                    stage.Text = Verdict(r) + " Jitter " + r.JitterMs + " ms.";
                     bar.Width = track.ActualWidth;
                     var hist = Settings.LoadFile<SpeedHistory>("speedtests.json");
                     hist.Results.Add(r);
@@ -283,13 +284,27 @@ namespace Arrakis.Modules
 
         private static TextBlock Trim(TextBlock t) { t.TextTrimming = TextTrimming.CharacterEllipsis; t.MaxWidth = 220; return t; }
 
-        private static string Verdict(SpeedResult r)
+        /// <summary>What the speeds mean in file terms: 8 megabits make a megabyte.</summary>
+        private static string Rates(double mbps)
         {
-            if (r.DownMbps >= 100) return "Plenty for 4K streaming, big downloads and video calls at the same time.";
-            if (r.DownMbps >= 25) return "Good for 4K streaming and video calls.";
-            if (r.DownMbps >= 10) return "Fine for HD streaming and video calls, slower for big downloads.";
-            return "On the slow side. HD video may buffer.";
+            double mbPerSec = mbps / 8.0;
+            double perMinute = mbPerSec * 60;
+            string sec = mbPerSec >= 1000 ? (mbPerSec / 1000).ToString("0.##") + " GB" : mbPerSec >= 10 ? mbPerSec.ToString("0") + " MB" : mbPerSec.ToString("0.#") + " MB";
+            string min = perMinute >= 1000 ? (perMinute / 1000).ToString("0.#") + " GB" : perMinute.ToString("0") + " MB";
+            return sec + " per second, " + min + " per minute";
         }
+
+        private static string FileTime(double mbps, double gigabytes)
+        {
+            if (mbps <= 0) return "-";
+            double secs = gigabytes * 8000 / mbps;
+            return secs >= 3600 ? (secs / 3600).ToString("0.#") + " hours" : secs >= 60 ? Math.Round(secs / 60) + " min" : Math.Max(1, Math.Round(secs)) + " s";
+        }
+
+        private static string Verdict(SpeedResult r) =>
+            "Download " + r.DownMbps.ToString("0.#") + " Mbps = " + Rates(r.DownMbps) + ". " +
+            "Upload " + r.UpMbps.ToString("0.#") + " Mbps = " + Rates(r.UpMbps) + ". " +
+            "A 1 GB file takes about " + FileTime(r.DownMbps, 1) + " to download and " + FileTime(r.UpMbps, 1) + " to upload, at the speed measured.";
 
         private static void FillTips(StackPanel list, ConnectionInfo info)
         {

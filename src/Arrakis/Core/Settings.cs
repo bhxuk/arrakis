@@ -70,6 +70,13 @@ namespace Arrakis.Core
         public string PhotoFolder { get; set; } = "";
         public int PhotoMinutes { get; set; } = 30;
         public Dictionary<string, string> ScenePhotos { get; set; } = new Dictionary<string, string>();
+        public string WallhavenKey { get; set; } = "";         // encrypted for this Windows user
+        public string WallhavenPath { get; set; } = "";
+        public Dictionary<string, string> WallhavenScreens { get; set; } = new Dictionary<string, string>();
+        public string WallhavenCategories { get; set; } = "110";   // general, anime, people
+        public bool WallhavenFit { get; set; } = true;
+        public string WallhavenDailyDate { get; set; } = "";
+        public string WallhavenDailyPath { get; set; } = "";
     }
 
     public class ClipboardSettings
@@ -170,6 +177,8 @@ namespace Arrakis.Core
     {
         public bool Enabled { get; set; } = true;
         public string Hotkey { get; set; } = "Ctrl+Alt+N";
+        public bool SaveFiles { get; set; } = true;
+        public string Folder { get; set; } = "";             // empty = Documents\Arrakis Notes
     }
 
     public class NetworkSettings

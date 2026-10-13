@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,6 +19,9 @@ namespace Arrakis.Modules
         public string Colour { get; set; } = "Yellow";
         public DateTime Created { get; set; } = DateTime.Now;
         public DateTime Updated { get; set; } = DateTime.Now;
+        public string FileName { get; set; } = "";
+        /// <summary>True when Arrakis names the file after the first line. False for files you added yourself.</summary>
+        public bool AutoName { get; set; } = true;
 
         public string Title
         {
@@ -82,6 +86,7 @@ namespace Arrakis.Modules
 
         public static void Delete(Note n)
         {
+            DeleteFile(n);
             All.Remove(n);
             Save();
             // Remove its sticky from the desktop too.
@@ -95,9 +100,138 @@ namespace Arrakis.Modules
 
         public static void Save()
         {
+            if (Settings.Current.Notes.SaveFiles) WriteFiles();
             Settings.SaveFile("notes.json", _book ?? new NoteBook());
             Changed?.Invoke();
         }
+
+        // ---------------- notes as text files ----------------
+        public static string FilesFolder
+        {
+            get
+            {
+                var f = Settings.Current.Notes.Folder;
+                return string.IsNullOrWhiteSpace(f) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Arrakis Notes") : f;
+            }
+        }
+
+        private static string SafeName(Note n)
+        {
+            var t = (n.Text ?? "").Trim();
+            int nl = t.IndexOfAny(new[] { '\r', '\n' });
+            if (nl > 0) t = t.Substring(0, nl);
+            if (t.Length > 60) t = t.Substring(0, 60);
+            foreach (var c in Path.GetInvalidFileNameChars()) t = t.Replace(c, ' ');
+            t = string.Join(" ", t.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Trim().TrimEnd('.');
+            return t.Length == 0 ? "Note" : t;
+        }
+
+        /// <summary>Writes each note to its own .txt file (named after its first line), renaming and tidying as notes change.</summary>
+        private static void WriteFiles()
+        {
+            try
+            {
+                string dir = FilesFolder;
+                Directory.CreateDirectory(dir);
+                var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var n in All.OrderBy(x => x.Created))
+                {
+                    string old = string.IsNullOrEmpty(n.FileName) ? null : Path.Combine(dir, n.FileName);
+                    if (string.IsNullOrWhiteSpace(n.Text))
+                    {
+                        if (old != null && File.Exists(old)) Recycle(old);
+                        n.FileName = "";
+                        continue;
+                    }
+                    string name;
+                    if (!n.AutoName && !string.IsNullOrEmpty(n.FileName)) name = n.FileName;
+                    else
+                    {
+                        string baseName = SafeName(n);
+                        name = baseName + ".txt";
+                        for (int i = 2; used.Contains(name) || All.Any(o => o != n && string.Equals(o.FileName, name, StringComparison.OrdinalIgnoreCase))
+                            || (File.Exists(Path.Combine(dir, name)) && !string.Equals(name, n.FileName, StringComparison.OrdinalIgnoreCase)); i++)
+                            name = baseName + " (" + i + ").txt";
+                    }
+                    used.Add(name);
+                    string path = Path.Combine(dir, name);
+                    if (old != null && !string.Equals(old, path, StringComparison.OrdinalIgnoreCase) && File.Exists(old) && !File.Exists(path))
+                        File.Move(old, path);
+                    if (!File.Exists(path) || File.ReadAllText(path) != n.Text) File.WriteAllText(path, n.Text);
+                    n.FileName = name;
+                }
+            }
+            catch (Exception ex) { Log.Write("Saving note files: " + ex.Message); }
+        }
+
+        /// <summary>Picks up .txt and .md files added to the folder, and edits made to note files outside Arrakis.</summary>
+        public static void ImportFromFolder()
+        {
+            if (!Settings.Current.Notes.SaveFiles) return;
+            try
+            {
+                string dir = FilesFolder;
+                if (!Directory.Exists(dir)) return;
+                bool changed = false;
+                foreach (var file in Directory.EnumerateFiles(dir).Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".md", StringComparison.OrdinalIgnoreCase)))
+                {
+                    string name = Path.GetFileName(file);
+                    var info = new FileInfo(file);
+                    if (info.Length > 2_000_000) continue;
+                    var note = All.FirstOrDefault(n => string.Equals(n.FileName, name, StringComparison.OrdinalIgnoreCase));
+                    if (note == null)
+                    {
+                        All.Add(new Note { Text = File.ReadAllText(file), FileName = name, AutoName = false, Created = info.CreationTime, Updated = info.LastWriteTime });
+                        changed = true;
+                    }
+                    else if (info.LastWriteTime > note.Updated.AddSeconds(2))
+                    {
+                        string text = File.ReadAllText(file);
+                        if (text != note.Text) { note.Text = text; note.Updated = info.LastWriteTime; changed = true; }
+                    }
+                }
+                if (changed)
+                {
+                    Settings.SaveFile("notes.json", _book ?? new NoteBook());
+                    Changed?.Invoke();
+                }
+            }
+            catch (Exception ex) { Log.Write("Reading note files: " + ex.Message); }
+        }
+
+        public static void DeleteFile(Note n)
+        {
+            if (string.IsNullOrEmpty(n.FileName)) return;
+            string path = Path.Combine(FilesFolder, n.FileName);
+            if (File.Exists(path)) Recycle(path);
+        }
+
+        /// <summary>Sends a file to the Recycle Bin rather than deleting it outright.</summary>
+        private static void Recycle(string path)
+        {
+            try
+            {
+                var op = new ShFileOp { wFunc = 3 /* delete */, pFrom = path + "\0\0", fFlags = 0x0040 | 0x0010 | 0x0004 | 0x0400 /* allow undo, no confirm, silent, no error UI */ };
+                if (SHFileOperation(ref op) != 0) File.Delete(path);
+            }
+            catch { try { File.Delete(path); } catch { } }
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private struct ShFileOp
+        {
+            public IntPtr hwnd;
+            public uint wFunc;
+            public string pFrom;
+            public string pTo;
+            public ushort fFlags;
+            public bool fAnyOperationsAborted;
+            public IntPtr hNameMappings;
+            public string lpszProgressTitle;
+        }
+
+        [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int SHFileOperation(ref ShFileOp op);
 
         public static IEnumerable<Note> Search(string q)
         {
@@ -121,6 +255,7 @@ namespace Arrakis.Modules
 
         protected override void OnStart()
         {
+            NoteStore.ImportFromFolder();
             if (!Hotkeys.Register("notes", S.Hotkey, () => Open(null, true)))
                 App.Instance.Tray.Notify("Quick notes shortcut unavailable", S.Hotkey + " is used by another app. Choose another in Arrakis > Quick notes.");
         }
@@ -136,6 +271,7 @@ namespace Arrakis.Modules
         {
             if (_window == null)
             {
+                NoteStore.ImportFromFolder();
                 _window = new NotesWindow();
                 _window.Closed += (s, e) => _window = null;
             }
@@ -171,6 +307,37 @@ namespace Arrakis.Modules
                 else { Settings.Save(); status.Text = "Saved."; }
             });
 
+            var folderText = UI.Text(NoteStore.FilesFolder, 12, Theme.Muted);
+            folderText.TextWrapping = TextWrapping.Wrap;
+            var files = new ToggleSwitch(S.SaveFiles, "Save notes as text files");
+            files.Toggled += on => { S.SaveFiles = on; Settings.Save(); if (on) { NoteStore.ImportFromFolder(); NoteStore.Save(); } };
+            var change = FlatButton.Secondary("Change folder...", () =>
+            {
+                var dlg = new System.Windows.Forms.FolderBrowserDialog { Description = "Choose where your notes are saved", SelectedPath = NoteStore.FilesFolder, UseDescriptionForTitle = true };
+                if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                S.Folder = dlg.SelectedPath;
+                Settings.Save();
+                foreach (var n in NoteStore.All) if (n.AutoName) n.FileName = "";
+                NoteStore.ImportFromFolder();
+                NoteStore.Save();
+                folderText.Text = NoteStore.FilesFolder;
+            });
+            change.MinHeight = 34;
+            var openFolder = FlatButton.IconButton(Icons.Folder, "Open the notes folder", () =>
+            {
+                try { Directory.CreateDirectory(NoteStore.FilesFolder); Shell.Open(NoteStore.FilesFolder); } catch { }
+            }, 34);
+            var reset = FlatButton.Secondary("Use the default", () =>
+            {
+                S.Folder = "";
+                Settings.Save();
+                foreach (var n in NoteStore.All) if (n.AutoName) n.FileName = "";
+                NoteStore.ImportFromFolder();
+                NoteStore.Save();
+                folderText.Text = NoteStore.FilesFolder;
+            });
+            reset.MinHeight = 34;
+
             var recent = UI.V(8);
             void Fill()
             {
@@ -203,7 +370,9 @@ namespace Arrakis.Modules
                 UI.Label("Settings"),
                 UI.Card(UI.V(4,
                     UI.SettingRow("Shortcut", "Opens a new note from anywhere.", UI.V(4, UI.H(8, hotkey, apply), status)),
-                    UI.SettingRow("Where notes are kept", "In notes.json in the Arrakis settings folder, on this PC only. They're included when you export a backup.", UI.Text(NoteStore.All.Count + (NoteStore.All.Count == 1 ? " note" : " notes"), 13, Theme.Muted))), 8));
+                    UI.SettingRow("Save notes as text files", "Each note is also saved as a .txt file, named after its first line, and kept up to date as you type. Text files you add to the folder show up as notes too.", files),
+                    UI.SettingRow("Notes folder", null, UI.V(6, UI.H(8, change, openFolder, reset), folderText)),
+                    UI.SettingRow("Backups", "Notes are included when you export a backup in Arrakis > Settings.", UI.Text(NoteStore.All.Count + (NoteStore.All.Count == 1 ? " note" : " notes"), 13, Theme.Muted))), 8));
         }
     }
 
@@ -290,7 +459,11 @@ namespace Arrakis.Modules
             });
 
             var tools = new DockPanel { Margin = new Thickness(0, 12, 0, 0) };
-            var right = UI.H(8, copy, _pin, del);
+            var folderBtn = FlatButton.IconButton(Icons.Folder, "Open the notes folder", () =>
+            {
+                try { Directory.CreateDirectory(NoteStore.FilesFolder); Shell.Open(NoteStore.FilesFolder); } catch { }
+            }, 38);
+            var right = UI.H(8, folderBtn, copy, _pin, del);
             DockPanel.SetDock(right, System.Windows.Controls.Dock.Right);
             tools.Children.Add(right);
             tools.Children.Add(_colours);

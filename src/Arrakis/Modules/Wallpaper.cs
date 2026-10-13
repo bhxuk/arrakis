@@ -65,7 +65,7 @@ namespace Arrakis.Modules
                 if (Native.SystemParametersInfo(Native.SPI_GETDESKWALLPAPER, (uint)sb.Capacity, sb, 0))
                 {
                     string cur = sb.ToString();
-                    if (!cur.StartsWith(Dir, StringComparison.OrdinalIgnoreCase)) S.OriginalWallpaper = cur;
+                    if (!cur.StartsWith(Settings.Folder, StringComparison.OrdinalIgnoreCase)) S.OriginalWallpaper = cur;
                     Settings.Save();
                 }
             }
@@ -123,6 +123,27 @@ namespace Arrakis.Modules
                         CurrentScene = "Your photos";
                         return;
                     }
+                    case "Wallhaven":
+                    {
+                        string key = "wh|" + S.WallhavenPath + "|" + string.Join(";", S.WallhavenScreens.Select(kv => kv.Key + "=" + kv.Value));
+                        if (_applied == key) return;
+                        SetForAll(r =>
+                        {
+                            if (S.WallhavenScreens.TryGetValue(ScreenKey(r.Left, r.Top, r.Right, r.Bottom), out var p) && File.Exists(p)) return p;
+                            return File.Exists(S.WallhavenPath) ? S.WallhavenPath : null;
+                        });
+                        _applied = key;
+                        CurrentScene = "Wallhaven";
+                        return;
+                    }
+                    case "WallhavenDaily":
+                    {
+                        string key = "whd-" + DateTime.Today.ToString("yyyyMMdd");
+                        if (_applied == key) return;
+                        string path = await WallhavenApi.DailyPick();
+                        if (path != null) { SetForAll(_ => path); _applied = key; CurrentScene = "Wallhaven, today's pick"; }
+                        return;
+                    }
                     case "ScenePhotos":
                     {
                         string scene = SceneForNow();
@@ -149,6 +170,27 @@ namespace Arrakis.Modules
                 }
             }
             catch (Exception ex) { Log.Write("Wallpaper update failed: " + ex.Message); }
+        }
+
+        public static string ScreenKey(int left, int top, int right, int bottom) => left + "," + top + "," + right + "," + bottom;
+
+        /// <summary>Uses a downloaded Wallhaven picture: on every screen, or just the screen given.</summary>
+        public void UseWallhaven(string path, string screenKey)
+        {
+            if (screenKey == null)
+            {
+                S.WallhavenPath = path;
+                S.WallhavenScreens.Clear();
+            }
+            else
+            {
+                S.WallhavenScreens[screenKey] = path;
+                // Other screens keep a Wallhaven picture too if one was chosen before; otherwise they're left as they are.
+            }
+            S.Mode = "Wallhaven";
+            Settings.Save();
+            if (!IsRunning) App.Instance.SetModuleEnabled(this, true);
+            else Reapply();
         }
 
         /// <summary>Sets a (possibly different) picture on every screen. Falls back to one picture everywhere.</summary>
@@ -433,7 +475,8 @@ namespace Arrakis.Modules
         private static readonly (string label, string mode)[] Modes =
         {
             ("Follow the sun", "Auto"), ("Dawn", "Dawn"), ("Day", "Day"), ("Sunset", "Sunset"), ("Night", "Night"),
-            ("Your photos (slideshow)", "Folder"), ("Your photos for each time of day", "ScenePhotos"), ("Bing photo of the day", "Photo")
+            ("Your photos (slideshow)", "Folder"), ("Your photos for each time of day", "ScenePhotos"), ("Bing photo of the day", "Photo"),
+            ("Wallhaven: the one you picked", "Wallhaven"), ("Wallhaven: a popular one each day", "WallhavenDaily")
         };
 
         public override UIElement BuildPage()
@@ -576,6 +619,8 @@ namespace Arrakis.Modules
                     UI.SettingRow("Every screen", "Each screen gets a picture drawn at its own size. With your photos, each screen gets a different one.", UI.Text("Automatic", 13, Theme.Muted)),
                     UI.Divider(),
                     UI.SettingRow("Your original wallpaper", "Arrakis remembers it and puts it back when you turn this module off.", restore)), 8),
+                UI.Label("Wallhaven · thousands of wallpapers, click one to use it"),
+                UI.Card(WallhavenBrowser.Build(this), 18),
                 UI.Label("Your photos"),
                 UI.Card(UI.V(0,
                     UI.SettingRow("Slideshow folder", "Used by the \"Your photos (slideshow)\" mode. Subfolders are included.", UI.V(4, chooseFolder, folderText)),
