@@ -70,6 +70,14 @@ namespace Arrakis.Core
         public int MaxItems { get; set; } = 200;
         public bool SaveImages { get; set; } = true;
         public string Hotkey { get; set; } = "Ctrl+Alt+V";
+        public bool SnippetsEnabled { get; set; } = true;
+        public List<Arrakis.Modules.Snippet> Snippets { get; set; } = new List<Arrakis.Modules.Snippet>();
+        public bool SnippetsSeeded { get; set; } = false;
+        public bool HideSensitive { get; set; } = true;
+        public int SensitiveSeconds { get; set; } = 60;
+        public string SyncFolder { get; set; } = "";
+        public string SyncKey { get; set; } = "";
+        public DateTime? LastSync { get; set; }
     }
 
     public class CaptureSettings

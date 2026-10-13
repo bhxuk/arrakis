@@ -26,6 +26,12 @@ namespace Arrakis.Modules
         public string Source { get; set; } = "";
         public DateTime Created { get; set; } = DateTime.Now;
         public bool Pinned { get; set; }
+        public string Collection { get; set; } = "";
+        public string SensitiveKind { get; set; } = "";
+        public DateTime? ExpiresAt { get; set; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsSensitive => !string.IsNullOrEmpty(SensitiveKind);
     }
 
     public class ClipStore
@@ -37,12 +43,15 @@ namespace Arrakis.Modules
     {
         public override string Id => "clipboard";
         public override string Name => "Clipboard";
-        public override string Description => "Everything you copy, searchable. Pin, stack and paste as plain text.";
+        public override string Description => "Everything you copy, searchable. Snippets, collections, paste transformations and sync between PCs.";
         public override string IconData => Icons.Clipboard;
         public override string ShortcutText => Settings.Current.Clipboard.Hotkey;
         public override bool IsEnabled { get => Settings.Current.Clipboard.Enabled; set => Settings.Current.Clipboard.Enabled = value; }
 
         private MessageWindow _listener;
+        private SnippetExpander _expander;
+        private System.Windows.Threading.DispatcherTimer _housekeeping;
+        public string SyncStatus { get; private set; } = "";
         private ClipStore _store = new ClipStore();
         private bool _ignoreNext;
         private ClipboardPanel _panel;
@@ -59,6 +68,16 @@ namespace Arrakis.Modules
 
         protected override void OnStart()
         {
+            SeedSnippets();
+            if (Settings.Current.Clipboard.SnippetsEnabled) _expander = new SnippetExpander(() => Settings.Current.Clipboard.Snippets, ExpandSnippet);
+            _housekeeping = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+            int ticks = 0;
+            _housekeeping.Tick += async (s2, e2) =>
+            {
+                PurgeExpired();
+                if (++ticks % 18 == 0 && !string.IsNullOrEmpty(Settings.Current.Clipboard.SyncFolder)) SyncStatus = await ClipboardSync.Run(this);
+            };
+            _housekeeping.Start();
             _store = Settings.LoadFile<ClipStore>("clipboard.json");
             _listener = new MessageWindow("ArrakisClipboard");
             _listener.Message += (msg, w, l) =>
@@ -74,6 +93,9 @@ namespace Arrakis.Modules
 
         protected override void OnStop()
         {
+            _expander?.Dispose();
+            _expander = null;
+            _housekeeping?.Stop();
             if (_listener != null)
             {
                 Native.RemoveClipboardFormatListener(_listener.Handle);
@@ -82,6 +104,147 @@ namespace Arrakis.Modules
             }
             Hotkeys.Unregister("clipboard");
             _panel?.Close();
+        }
+
+        private UIElement SnippetsCard()
+        {
+            var c = Settings.Current.Clipboard;
+            var on = new ToggleSwitch(c.SnippetsEnabled, "Expand shortcodes");
+            on.Toggled += v =>
+            {
+                c.SnippetsEnabled = v;
+                Settings.Save();
+                _expander?.Dispose();
+                _expander = v && IsRunning ? new SnippetExpander(() => Settings.Current.Clipboard.Snippets, ExpandSnippet) : null;
+            };
+            var list = UI.V(4);
+            void Render()
+            {
+                list.Children.Clear();
+                foreach (var sn in c.Snippets.ToList())
+                {
+                    var snip = sn;
+                    var edit = FlatButton.Secondary("Edit", () => { if (EditSnippet(snip)) Render(); });
+                    edit.MinHeight = 34;
+                    var del = FlatButton.IconButton(Icons.Trash, "Delete snippet", () => { c.Snippets.Remove(snip); Settings.Save(); Render(); }, 34);
+                    string preview = (snip.Text ?? "").Replace("\r", "").Replace("\n", " ");
+                    if (preview.Length > 60) preview = preview.Substring(0, 60) + "...";
+                    list.Children.Add(UI.SettingRow(snip.Name + (string.IsNullOrEmpty(snip.Shortcode) ? "" : "   " + snip.Shortcode), preview, UI.H(8, edit, del)));
+                }
+                if (c.Snippets.Count == 0) list.Children.Add(UI.Text("No snippets yet.", 13, Theme.Muted));
+            }
+            Render();
+            var add = FlatButton.Secondary("Add a snippet...", () =>
+            {
+                var sn = new Snippet();
+                if (EditSnippet(sn)) { c.Snippets.Add(sn); Settings.Save(); Render(); }
+            });
+            add.HorizontalAlignment = HorizontalAlignment.Left;
+            return UI.Card(UI.V(10,
+                UI.SettingRow("Expand shortcodes as you type", "Type a shortcode like ;sig anywhere and it's replaced with the snippet. Snippets are also in the clipboard panel under Snippets.", on),
+                UI.Divider(),
+                list,
+                add,
+                UI.Text("In a snippet, {date}, {time} and {clipboard} are filled in for you.", 12, Theme.Muted)), 16);
+        }
+
+        private static bool EditSnippet(Snippet sn)
+        {
+            var dlg = new Window
+            {
+                Title = string.IsNullOrEmpty(sn.Name) ? "New snippet" : "Edit snippet",
+                Width = 480,
+                SizeToContent = SizeToContent.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Background = Theme.Bg,
+                ResizeMode = ResizeMode.NoResize,
+                FontFamily = Theme.Font
+            };
+            var name = UI.TextInput(sn.Name, 420);
+            var code = UI.TextInput(sn.Shortcode, 200);
+            var text = UI.TextInput(sn.Text, 420);
+            text.AcceptsReturn = true;
+            text.TextWrapping = TextWrapping.Wrap;
+            text.Height = 140;
+            text.VerticalContentAlignment = VerticalAlignment.Top;
+            text.Padding = new Thickness(10, 8, 10, 8);
+            var error = UI.Text("", 12, Theme.Red);
+            bool saved = false;
+            var ok = FlatButton.Primary("Save", () =>
+            {
+                string sc = code.Text.Trim();
+                if (string.IsNullOrWhiteSpace(text.Text)) { error.Text = "Type the text to paste."; return; }
+                if (sc.Length == 1) { error.Text = "Use at least 2 characters for the shortcode, like ;sig."; return; }
+                sn.Name = string.IsNullOrWhiteSpace(name.Text) ? (sc.Length > 0 ? sc : "Snippet") : name.Text.Trim();
+                sn.Shortcode = sc;
+                sn.Text = text.Text;
+                sn.Changed = DateTime.Now;
+                Settings.Save();
+                saved = true;
+                dlg.Close();
+            });
+            dlg.Content = new Border
+            {
+                Padding = new Thickness(24),
+                Child = UI.V(10,
+                    UI.Text("Name", 13, Theme.Muted), name,
+                    UI.Text("Shortcode (optional). Starting with ; avoids typing it by accident.", 13, Theme.Muted), code,
+                    UI.Text("Text to paste", 13, Theme.Muted), text,
+                    error, ok)
+            };
+            dlg.SourceInitialized += (s, e) => Native.UseDarkTitleBar(new WindowInteropHelper(dlg).Handle);
+            dlg.ShowDialog();
+            return saved;
+        }
+
+        private UIElement SensitiveCard()
+        {
+            var c = Settings.Current.Clipboard;
+            var hide = new ToggleSwitch(c.HideSensitive, "Hide and delete private things");
+            hide.Toggled += v => { c.HideSensitive = v; Settings.Save(); };
+            var secs = new MiniSlider(10, 300, c.SensitiveSeconds, null, 200) { Step = 10 };
+            var secsText = UI.Text(c.SensitiveSeconds + " s", 13, Theme.Muted);
+            secs.ValueChanged += v => { c.SensitiveSeconds = (int)v; secsText.Text = (int)v + " s"; Settings.Save(); };
+            return UI.Card(UI.V(0,
+                UI.SettingRow("Hide card numbers and passwords", "Things that look like a card number, bank account or password are shown as dots, kept out of search and sync, and deleted after a short time. They're cleared from the clipboard too.", hide),
+                UI.Divider(),
+                UI.SettingRow("Delete after", null, UI.H(10, secs, secsText))), 8);
+        }
+
+        private UIElement SyncCard()
+        {
+            var c = Settings.Current.Clipboard;
+            var folder = UI.Text(string.IsNullOrEmpty(c.SyncFolder) ? "No folder chosen." : c.SyncFolder, 12, Theme.Muted);
+            var choose = FlatButton.Secondary("Choose folder...", () =>
+            {
+                var dlg = new System.Windows.Forms.FolderBrowserDialog { Description = "Choose a folder that syncs between your PCs, like one in OneDrive or Dropbox" };
+                if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                c.SyncFolder = dlg.SelectedPath;
+                Settings.Save();
+                folder.Text = c.SyncFolder;
+            });
+            choose.MinHeight = 36;
+            var pass = new PasswordBox { Width = 200, Height = 36, FontSize = 14, Padding = new Thickness(10, 0, 10, 0), VerticalContentAlignment = VerticalAlignment.Center, Background = Theme.Subtle, Foreground = Theme.Text, BorderBrush = Theme.Line };
+            var status = UI.Text(!string.IsNullOrEmpty(SyncStatus) ? SyncStatus : c.LastSync.HasValue ? "Last synced " + ClipboardPanel.Ago(c.LastSync.Value) + "." : "Not set up yet.", 12, Theme.Muted);
+            var setPass = FlatButton.Secondary("Save password", () =>
+            {
+                if (pass.Password.Length < 8) { status.Text = "Use at least 8 characters."; return; }
+                c.SyncKey = ClipboardSync.PasswordToKeyStore(pass.Password);
+                Settings.Save();
+                pass.Clear();
+                status.Text = "Password saved. Use the same one on your other PCs.";
+            });
+            setPass.MinHeight = 36;
+            var now = FlatButton.Primary("Sync now");
+            now.Click += async (s, e) => { status.Text = "Syncing..."; SyncStatus = await ClipboardSync.Run(this); status.Text = SyncStatus; };
+            now.HorizontalAlignment = HorizontalAlignment.Left;
+            return UI.Card(UI.V(0,
+                UI.Text("Keeps your pinned items, collections and snippets the same on every PC. Arrakis writes one encrypted file into a folder that you already sync, like OneDrive or Dropbox. Nothing goes anywhere else, and private things are never synced.", 13, Theme.Muted).WithMargin(new Thickness(0, 6, 0, 10)),
+                UI.SettingRow("Sync folder", null, UI.V(4, choose, folder)),
+                UI.Divider(),
+                UI.SettingRow("Password", "Encrypts the sync file. Use the same password on each PC.", UI.H(8, pass, setPass)),
+                UI.Divider(),
+                UI.SettingRow("Sync", "Runs every 3 minutes while Arrakis is open.", UI.V(4, now, status))), 8);
         }
 
         private async void OnClipboardChanged()
@@ -157,7 +320,17 @@ namespace Arrakis.Modules
                 string kind = "Text";
                 if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) && (uri.Scheme == "http" || uri.Scheme == "https") && !trimmed.Contains(' ')) kind = "Link";
                 else if (trimmed.Length <= 32 && (HexColour.IsMatch(trimmed) && trimmed.StartsWith("#") || RgbColour.IsMatch(trimmed))) kind = "Colour";
-                _store.Items.Insert(0, new ClipItem { Kind = kind, Text = text, Source = source });
+                var clip = new ClipItem { Kind = kind, Text = text, Source = source };
+                if (Settings.Current.Clipboard.HideSensitive)
+                {
+                    var sens = Sensitive.Detect(text);
+                    if (sens != null)
+                    {
+                        clip.SensitiveKind = sens;
+                        clip.ExpiresAt = DateTime.Now.AddSeconds(Math.Max(10, Settings.Current.Clipboard.SensitiveSeconds));
+                    }
+                }
+                _store.Items.Insert(0, clip);
             }
             Trim();
             Save();
@@ -204,6 +377,136 @@ namespace Arrakis.Modules
         {
             item.Pinned = !item.Pinned;
             Save();
+        }
+
+        private void PurgeExpired()
+        {
+            var expired = _store.Items.Where(i => i.ExpiresAt.HasValue && i.ExpiresAt.Value < DateTime.Now && !i.Pinned).ToList();
+            if (expired.Count == 0) return;
+            foreach (var i in expired) Delete(i, false);
+            // If it's still on the clipboard, clear that too.
+            try
+            {
+                if (System.Windows.Clipboard.ContainsText() && expired.Any(i => i.Text == System.Windows.Clipboard.GetText()))
+                {
+                    _ignoreNext = true;
+                    System.Windows.Clipboard.Clear();
+                }
+            }
+            catch { }
+            Save();
+        }
+
+        public IEnumerable<string> Collections => _store.Items.Select(i => i.Collection).Where(c => !string.IsNullOrEmpty(c)).Distinct().OrderBy(c => c);
+
+        public void SetCollection(ClipItem item, string collection)
+        {
+            item.Collection = collection ?? "";
+            if (!string.IsNullOrEmpty(item.Collection)) { item.ExpiresAt = null; }
+            Save();
+        }
+
+        private void SeedSnippets()
+        {
+            var c = Settings.Current.Clipboard;
+            if (c.SnippetsSeeded) return;
+            c.Snippets.Add(new Snippet { Name = "Today's date", Shortcode = ";date", Text = "{date}" });
+            c.Snippets.Add(new Snippet { Name = "Email sign-off", Shortcode = ";sig", Text = "Kind regards," + Environment.NewLine + Environment.UserName });
+            c.SnippetsSeeded = true;
+            Settings.Save();
+        }
+
+        /// <summary>Fills in {date}, {time} and {clipboard} placeholders.</summary>
+        public static string FillSnippet(string text)
+        {
+            string clip = "";
+            try { if (System.Windows.Clipboard.ContainsText()) clip = System.Windows.Clipboard.GetText(); } catch { }
+            return (text ?? "")
+                .Replace("{date}", DateTime.Now.ToString("d MMMM yyyy"))
+                .Replace("{time}", DateTime.Now.ToString("HH:mm"))
+                .Replace("{clipboard}", clip);
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+
+        private async void ExpandSnippet(Snippet s, int typedLength)
+        {
+            if (_expander != null) _expander.Busy = true;
+            try
+            {
+                await Task.Delay(40);
+                for (int i = 0; i < typedLength; i++)
+                {
+                    keybd_event(0x08, 0, 0, UIntPtr.Zero);
+                    keybd_event(0x08, 0, 2, UIntPtr.Zero);
+                }
+                await PasteTextHere(FillSnippet(s.Text));
+            }
+            finally { if (_expander != null) _expander.Busy = false; }
+        }
+
+        /// <summary>Pastes text into whatever has focus, then puts the old clipboard back.</summary>
+        public async Task PasteTextHere(string text)
+        {
+            IDataObject previous = null;
+            try { previous = System.Windows.Clipboard.GetDataObject(); } catch { }
+            string previousText = null;
+            try { if (System.Windows.Clipboard.ContainsText()) previousText = System.Windows.Clipboard.GetText(); } catch { }
+            try
+            {
+                _ignoreNext = true;
+                System.Windows.Clipboard.SetDataObject(new DataObject(DataFormats.UnicodeText, text), true);
+            }
+            catch { _ignoreNext = false; return; }
+            await Task.Delay(60);
+            Native.SendCtrlV();
+            await Task.Delay(350);
+            if (previousText != null)
+            {
+                try { _ignoreNext = true; System.Windows.Clipboard.SetDataObject(new DataObject(DataFormats.UnicodeText, previousText), true); }
+                catch { _ignoreNext = false; }
+            }
+        }
+
+        public async void PasteText(string text, IntPtr target)
+        {
+            await Task.Delay(60);
+            Native.ForceForeground(target);
+            await Task.Delay(120);
+            try
+            {
+                _ignoreNext = true;
+                System.Windows.Clipboard.SetDataObject(new DataObject(DataFormats.UnicodeText, text), true);
+            }
+            catch { _ignoreNext = false; return; }
+            await Task.Delay(40);
+            Native.SendCtrlV();
+        }
+
+        /// <summary>Adds items and snippets from another PC. Returns how many were new.</summary>
+        public int MergeFromSync(List<ClipItem> items, List<Snippet> snippets)
+        {
+            int added = 0;
+            foreach (var r in items ?? new List<ClipItem>())
+            {
+                var mine = _store.Items.FirstOrDefault(i => i.Id == r.Id) ?? _store.Items.FirstOrDefault(i => i.Kind != "Image" && i.Text == r.Text);
+                if (mine == null) { _store.Items.Add(r); added++; }
+                else
+                {
+                    mine.Pinned = mine.Pinned || r.Pinned;
+                    if (string.IsNullOrEmpty(mine.Collection)) mine.Collection = r.Collection;
+                }
+            }
+            var c = Settings.Current.Clipboard;
+            foreach (var sn in snippets ?? new List<Snippet>())
+            {
+                var mine = c.Snippets.FirstOrDefault(x => x.Id == sn.Id);
+                if (mine == null) { c.Snippets.Add(sn); added++; }
+                else if (sn.Changed > mine.Changed) { mine.Name = sn.Name; mine.Shortcode = sn.Shortcode; mine.Text = sn.Text; mine.Changed = sn.Changed; }
+            }
+            if (added > 0) { Save(); Settings.Save(); }
+            return added;
         }
 
         private void Save()
@@ -319,6 +622,12 @@ namespace Arrakis.Modules
                     UI.SettingRow("History size", "Pinned items are never removed.", UI.H(10, max, maxText)),
                     UI.Divider(),
                     UI.SettingRow("Privacy", "Password managers that mark copies as private are never recorded. Everything stays on this PC.", clear)), 8),
+                UI.Label("Snippets"),
+                SnippetsCard(),
+                UI.Label("Private things"),
+                SensitiveCard(),
+                UI.Label("Sync between your PCs"),
+                SyncCard(),
                 UI.Label("Keys in the clipboard panel"),
                 UI.Card(UI.V(10,
                     UI.H(10, UI.Kbd("Enter"), UI.Text("Paste", 14)),
@@ -326,6 +635,7 @@ namespace Arrakis.Modules
                     UI.H(10, UI.Kbd("Ctrl + P"), UI.Text("Pin or unpin", 14)),
                     UI.H(10, UI.Kbd("Ctrl + S"), UI.Text("Add to stack, then Ctrl + Shift + V pastes the whole stack", 14)),
                     UI.H(10, UI.Kbd("Delete"), UI.Text("Remove from history", 14)),
+                    UI.H(10, UI.Kbd("Right-click"), UI.Text("Paste as UPPERCASE, one line, without link tracking and more, or add to a collection", 14)),
                     UI.H(10, UI.Kbd("Esc"), UI.Text("Close", 14)))));
         }
     }
@@ -397,13 +707,15 @@ namespace Arrakis.Modules
             searchGrid.Width = 540;
 
             var filterRow = new WrapPanel();
-            foreach (var f in new[] { "All", "Pinned", "Text", "Images", "Links", "Colours" })
+            var filterNames = new List<string> { "All", "Pinned", "Snippets", "Text", "Images", "Links", "Colours" };
+            filterNames.AddRange(m.Collections.Select(c => "@" + c));
+            foreach (var f in filterNames)
             {
-                var chip = new Chip(f, f == "All") { Margin = new Thickness(0, 0, 8, 0), Focusable = false };
+                var chip = new Chip(f.StartsWith("@") ? f.Substring(1) : f, f == "All") { Margin = new Thickness(0, 0, 8, 8), Focusable = false, Tag = f };
                 chip.Click += (s, e) =>
                 {
                     _filter = f;
-                    foreach (var c in _filters) c.Selected = (string)c.Content == f;
+                    foreach (var c in _filters) c.Selected = (string)c.Tag == f;
                     _selected = 0;
                     Render();
                     _search.Focus();
@@ -526,7 +838,17 @@ namespace Arrakis.Modules
             var item = _visible[_selected];
             _closing = true;
             Hide();
-            _m.Paste(item, _target, plain);
+            if (item.Kind == "Snippet") _m.PasteText(ClipboardModule.FillSnippet(item.Text), _target);
+            else _m.Paste(item, _target, plain);
+            Close();
+        }
+
+        private void PasteTransformed(ClipItem item, string transform)
+        {
+            _closing = true;
+            Hide();
+            string text = item.Kind == "Snippet" ? ClipboardModule.FillSnippet(item.Text) : item.Text;
+            _m.PasteText(ClipTransforms.Apply(transform, text), _target);
             Close();
         }
 
@@ -541,8 +863,14 @@ namespace Arrakis.Modules
                 case "Images": items = items.Where(i => i.Kind == "Image"); break;
                 case "Links": items = items.Where(i => i.Kind == "Link"); break;
                 case "Colours": items = items.Where(i => i.Kind == "Colour"); break;
+                case "Snippets":
+                    items = Settings.Current.Clipboard.Snippets.Select(sn => new ClipItem { Id = sn.Id, Kind = "Snippet", Text = sn.Text, Source = sn.Shortcode, Collection = sn.Name, Created = sn.Changed });
+                    break;
+                default:
+                    if (_filter.StartsWith("@")) { string col = _filter.Substring(1); items = items.Where(i => i.Collection == col); }
+                    break;
             }
-            if (q.Length > 0) items = items.Where(i => (i.Text ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 || (i.Source ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
+            if (q.Length > 0) items = items.Where(i => !i.IsSensitive && ((i.Text ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 || (i.Source ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 || (i.Collection ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0));
             // Pinned items first, then newest.
             _visible = items.OrderByDescending(i => i.Pinned).ThenByDescending(i => i.Created).Take(150).ToList();
             if (_selected >= _visible.Count) _selected = Math.Max(0, _visible.Count - 1);
@@ -550,7 +878,7 @@ namespace Arrakis.Modules
             _list.Children.Clear();
             for (int i = 0; i < _visible.Count; i++) _list.Children.Add(Row(_visible[i], i == _selected, i));
             if (_visible.Count == 0)
-                _list.Children.Add(UI.Text(q.Length > 0 ? "Nothing matches \"" + q + "\"." : "Copy something and it will appear here.", 14, Theme.Muted).WithMargin(new Thickness(8, 16, 8, 16)));
+                _list.Children.Add(UI.Text(q.Length > 0 ? "Nothing matches \"" + q + "\"." : _filter == "Snippets" ? "No snippets yet. Add some in Arrakis > Clipboard." : "Copy something and it will appear here.", 14, Theme.Muted).WithMargin(new Thickness(8, 16, 8, 16)));
 
             _stackBar.Visibility = _m.Stack.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             _stackText.Text = "Stack: " + _m.Stack.Count + (_m.Stack.Count == 1 ? " item ready" : " items ready");
@@ -579,6 +907,14 @@ namespace Arrakis.Modules
                 try { b = Theme.Brush(item.Text.Trim().StartsWith("#") ? item.Text.Trim() : "#" + item.Text.Trim()); } catch { }
                 thumb = new Border { Width = 44, Height = 44, CornerRadius = new CornerRadius(12), Background = b };
             }
+            else if (item.IsSensitive)
+            {
+                thumb = new Border { Width = 44, Height = 44, CornerRadius = new CornerRadius(12), Background = Theme.Brush(Color.FromArgb(0x30, 0xE2, 0x58, 0x5F)), Child = UI.GridIcon("M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3", 20, Theme.Red) };
+            }
+            else if (item.Kind == "Snippet")
+            {
+                thumb = new Border { Width = 44, Height = 44, CornerRadius = new CornerRadius(12), Background = Theme.TealTint, Child = UI.GridIcon("M8 6l-5 6 5 6M16 6l5 6-5 6", 20, Theme.Teal) };
+            }
             else
             {
                 string icon = item.Pinned ? Icons.Pin : item.Kind == "Link" ? Icons.Link : Icons.Lines;
@@ -587,11 +923,16 @@ namespace Arrakis.Modules
                 thumb = new Border { Width = 44, Height = 44, CornerRadius = new CornerRadius(12), Background = tint, Child = UI.GridIcon(icon, 20, fg) };
             }
 
-            string title = item.Kind == "Image" ? "Image " + item.ImageWidth + " × " + item.ImageHeight : FirstLine(item.Text);
+            string title = item.Kind == "Image" ? "Image " + item.ImageWidth + " × " + item.ImageHeight
+                : item.IsSensitive ? Sensitive.Mask(item.SensitiveKind, item.Text)
+                : item.Kind == "Snippet" ? (string.IsNullOrEmpty(item.Collection) ? FirstLine(item.Text) : item.Collection)
+                : FirstLine(item.Text);
             var titleText = UI.Text(title, 14, Theme.Text, FontWeights.SemiBold);
             titleText.TextWrapping = TextWrapping.NoWrap;
             titleText.TextTrimming = TextTrimming.CharacterEllipsis;
-            string meta = (item.Pinned ? "Pinned · " : "") + KindLabel(item) + " · " + Ago(item.Created) + (string.IsNullOrEmpty(item.Source) ? "" : " · " + item.Source);
+            string meta = (item.Pinned ? "Pinned · " : "") + (string.IsNullOrEmpty(item.Collection) || item.Kind == "Snippet" ? "" : item.Collection + " · ") + KindLabel(item) + " · " + Ago(item.Created) + (string.IsNullOrEmpty(item.Source) ? "" : " · " + item.Source);
+            if (item.Kind == "Snippet") meta = "Snippet" + (string.IsNullOrEmpty(item.Source) ? "" : " · type " + item.Source) + " · " + FirstLine(item.Text);
+            if (item.IsSensitive) meta = item.SensitiveKind + " · hidden" + (item.ExpiresAt.HasValue ? " · deleted in " + Math.Max(0, (int)(item.ExpiresAt.Value - DateTime.Now).TotalSeconds) + "s" : "") + (string.IsNullOrEmpty(item.Source) ? "" : " · " + item.Source);
             if (_m.Stack.Contains(item)) meta = "In stack (" + (_m.Stack.IndexOf(item) + 1) + ") · " + meta;
             var info = UI.V(2, titleText, UI.Text(meta, 12, Theme.Muted));
             info.VerticalAlignment = VerticalAlignment.Center;
@@ -640,10 +981,49 @@ namespace Arrakis.Modules
                 del.Click += (a, b) => { _m.Delete(item); Render(); };
                 menu.Items.Add(paste);
                 if (item.Kind != "Image") menu.Items.Add(plain);
+                if (item.Kind != "Image")
+                {
+                    var pasteAs = new MenuItem { Header = "Paste as" };
+                    foreach (var t in ClipTransforms.Names)
+                    {
+                        string tn = t;
+                        var mi = new MenuItem { Header = tn };
+                        mi.Click += (a, b) => PasteTransformed(item, tn);
+                        pasteAs.Items.Add(mi);
+                    }
+                    menu.Items.Add(pasteAs);
+                }
+                if (item.Kind == "Snippet") { menu.IsOpen = true; e.Handled = true; return; }
                 menu.Items.Add(copy);
                 menu.Items.Add(new Separator());
                 menu.Items.Add(pin);
                 if (item.Kind != "Image") menu.Items.Add(stack);
+                var coll = new MenuItem { Header = "Add to collection" };
+                foreach (var c in _m.Collections)
+                {
+                    string cn = c;
+                    var mi = new MenuItem { Header = cn, IsChecked = item.Collection == cn };
+                    mi.Click += (a, b) => { _m.SetCollection(item, item.Collection == cn ? "" : cn); Render(); };
+                    coll.Items.Add(mi);
+                }
+                var newColl = new MenuItem { Header = "New collection..." };
+                newColl.Click += (a, b) =>
+                {
+                    _closing = true;
+                    string name = Ask("New collection", "Name, for example Addresses or Replies");
+                    _closing = false;
+                    if (!string.IsNullOrWhiteSpace(name)) { _m.SetCollection(item, name.Trim()); Render(); }
+                    Activate();
+                };
+                if (coll.Items.Count > 0) coll.Items.Add(new Separator());
+                coll.Items.Add(newColl);
+                menu.Items.Add(coll);
+                if (item.IsSensitive)
+                {
+                    var keep = new MenuItem { Header = "Keep it (don't delete)" };
+                    keep.Click += (a, b) => { item.ExpiresAt = null; _m.SetCollection(item, item.Collection); Render(); };
+                    menu.Items.Add(keep);
+                }
                 if (item.Kind == "Link")
                 {
                     var open = new MenuItem { Header = "Open link" };
@@ -655,6 +1035,30 @@ namespace Arrakis.Modules
                 e.Handled = true;
             };
             return row;
+        }
+
+        public static string Ask(string title, string prompt, string value = "")
+        {
+            var dlg = new Window
+            {
+                Title = title,
+                Width = 380,
+                SizeToContent = SizeToContent.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Background = Theme.Bg,
+                ResizeMode = ResizeMode.NoResize,
+                FontFamily = Theme.Font,
+                Topmost = true
+            };
+            var box = UI.TextInput(value, 320);
+            string result = null;
+            var ok = FlatButton.Primary("OK", () => { result = box.Text; dlg.Close(); });
+            box.KeyDown += (s, e) => { if (e.Key == Key.Enter) { result = box.Text; dlg.Close(); } };
+            dlg.Content = new Border { Padding = new Thickness(22), Child = UI.V(12, UI.Text(prompt, 14, Theme.Text), box, ok) };
+            dlg.SourceInitialized += (s, e) => Native.UseDarkTitleBar(new WindowInteropHelper(dlg).Handle);
+            dlg.Loaded += (s, e) => box.Focus();
+            dlg.ShowDialog();
+            return result;
         }
 
         private static string KindLabel(ClipItem i) => i.Kind switch { "Image" => "Image", "Link" => "Link", "Colour" => "Colour", _ => "Text" };
