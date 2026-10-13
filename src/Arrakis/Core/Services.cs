@@ -182,7 +182,7 @@ namespace Arrakis.Core
                 }
             }
             catch (Exception ex) { Log.Write("Media refresh failed: " + ex.Message); }
-            _ui.BeginInvoke(new Action(() => Changed?.Invoke()));
+            _ = _ui.BeginInvoke(new Action(() => Changed?.Invoke()));
         }
 
         private static string FriendlyApp(string id)
