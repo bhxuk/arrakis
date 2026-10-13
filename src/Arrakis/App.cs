@@ -89,6 +89,7 @@ namespace Arrakis
             TaskScheduler.UnobservedTaskException += (s, ex) => { Log.Write("Task: " + ex.Exception); ex.SetObserved(); };
 
             Settings.Load();
+            AppStyles.Install();
             AutoStart.Apply(Settings.Current.StartWithWindows);
             Hotkeys.Init();
             MediaService.Instance.Start();

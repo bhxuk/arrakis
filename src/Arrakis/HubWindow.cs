@@ -29,7 +29,9 @@ namespace Arrakis
             Height = 800;
             MinWidth = 900;
             MinHeight = 600;
-            Background = Theme.Bg;
+            bool glass = Glass.Available;
+            Theme.GlassActive = glass;
+            Background = glass ? Brushes.Transparent : Theme.Bg;
             Foreground = Theme.Text;
             FontFamily = Theme.Font;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -43,7 +45,7 @@ namespace Arrakis
             foreach (var m in App.Instance.Modules) AddNav(m.Id, m.Name, m.IconData);
 
             var settingsBtn = NavButton("settings", "Settings", Icons.Settings);
-            var side = new DockPanel { Width = 240, Background = Theme.Side };
+            var side = new DockPanel { Width = 240, Background = glass ? Theme.GlassSide : Theme.Side };
             DockPanel.SetDock(settingsBtn, System.Windows.Controls.Dock.Bottom);
             settingsBtn.Margin = new Thickness(14, 0, 14, 20);
             side.Children.Add(settingsBtn);
@@ -58,7 +60,8 @@ namespace Arrakis
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
 
-            var root = new DockPanel();
+            SmoothScroll.Enable(_scroll);
+            var root = new DockPanel { Background = glass ? Theme.GlassTint : null };
             DockPanel.SetDock(side, System.Windows.Controls.Dock.Left);
             root.Children.Add(side);
             root.Children.Add(new Border { Width = 1, Background = Theme.Line });
@@ -66,7 +69,21 @@ namespace Arrakis
             root.Children.Add(_scroll);
             Content = root;
 
-            SourceInitialized += (s, e) => Native.UseDarkTitleBar(new WindowInteropHelper(this).Handle);
+            SourceInitialized += (s, e) =>
+            {
+                var h = new WindowInteropHelper(this).Handle;
+                Native.UseDarkTitleBar(h);
+                Native.RoundCorners(h);
+                if (glass && !Glass.Apply(this))
+                {
+                    // Couldn't get the glass effect: fall back to the solid look.
+                    Theme.GlassActive = false;
+                    Background = Theme.Bg;
+                    root.Background = null;
+                    side.Background = Theme.Side;
+                    Navigate(_current);
+                }
+            };
             Navigate("home");
         }
 
@@ -294,6 +311,15 @@ namespace Arrakis
                 Settings.Save();
                 NeedsRestart();
             });
+            var glassToggle = new ToggleSwitch(st.GlassWindow, "Glass window");
+            glassToggle.IsEnabled = Environment.OSVersion.Version.Build >= 22621;
+            glassToggle.Toggled += on =>
+            {
+                st.GlassWindow = on;
+                Settings.Save();
+                // Reopen the window so the change shows straight away.
+                Dispatcher.BeginInvoke(new Action(() => { var page = _current; Close(); App.Instance.ShowHub(page); }));
+            };
             var accents = new WrapPanel();
             var accentButtons = new List<FlatButton>();
             foreach (var name in Theme.AccentNames)
@@ -400,6 +426,8 @@ namespace Arrakis
                     UI.SettingRow("Theme", "Dark, light, or follow Windows.", theme),
                     UI.Divider(),
                     UI.SettingRow("Accent colour", "Used for buttons, switches and highlights.", accents),
+                    UI.Divider(),
+                    UI.SettingRow("Glass window", Environment.OSVersion.Version.Build >= 22621 ? "Your wallpaper shows softly through this window, like frosted glass." : "Needs Windows 11 (version 22H2 or later).", glassToggle),
                     UI.V(8, restartNote, restartBtn)), 8),
                 UI.Label("Command bar"),
                 UI.Card(UI.V(0,

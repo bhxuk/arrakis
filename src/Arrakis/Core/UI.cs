@@ -62,6 +62,13 @@ namespace Arrakis.Core
         public static readonly SolidColorBrush Bg = Freeze(new SolidColorBrush(BgColor));
         public static readonly SolidColorBrush Panel = Freeze(new SolidColorBrush(PanelColor));
         public static readonly SolidColorBrush Side = Freeze(new SolidColorBrush(SideColor));
+
+        /// <summary>True while the main window has a glass background; cards become slightly see-through.</summary>
+        public static bool GlassActive { get; set; }
+        private static readonly SolidColorBrush CardGlass = Freeze(new SolidColorBrush(Color.FromArgb(IsLight ? (byte)0xC8 : (byte)0xA6, PanelColor.R, PanelColor.G, PanelColor.B)));
+        public static Brush Card => GlassActive ? CardGlass : Panel;
+        public static readonly SolidColorBrush GlassTint = Freeze(new SolidColorBrush(Color.FromArgb(IsLight ? (byte)0x8C : (byte)0x8C, BgColor.R, BgColor.G, BgColor.B)));
+        public static readonly SolidColorBrush GlassSide = Freeze(new SolidColorBrush(Color.FromArgb(IsLight ? (byte)0x55 : (byte)0x5C, SideColor.R, SideColor.G, SideColor.B)));
         public static readonly SolidColorBrush Text = Freeze(new SolidColorBrush(TextColor));
         public static readonly SolidColorBrush Muted = Freeze(new SolidColorBrush(MutedColor));
         public static readonly SolidColorBrush Amber = Freeze(new SolidColorBrush(AmberColor));
@@ -126,7 +133,7 @@ namespace Arrakis.Core
         {
             return new Border
             {
-                Background = bg ?? Theme.Panel,
+                Background = bg ?? Theme.Card,
                 BorderBrush = Theme.Line,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(radius),

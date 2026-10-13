@@ -198,6 +198,7 @@ namespace Arrakis.Core
         public bool AutoUpdate { get; set; } = true;
         public string Theme { get; set; } = "Dark";          // Dark, Light, System
         public string Accent { get; set; } = "Amber";
+        public bool GlassWindow { get; set; } = true;          // frosted glass behind the main window (Windows 11)
         public bool CommandBar { get; set; } = true;
         public string CommandBarHotkey { get; set; } = "Alt+Space";
         public string CalendarUrl { get; set; } = "";       // an .ics link, used by the calendar widget and Focus
