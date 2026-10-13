@@ -257,7 +257,7 @@ namespace Arrakis
             body.Children.Add(UI.V(8, UI.Label("Arrakis itself").WithColor(Theme.Amber), UI.V(0, mem, UI.Text("memory in use", 12, Theme.Muted)), ver));
             var card = new Border
             {
-                Background = Theme.Brush("#1E1A12"),
+                Background = Theme.Warm,
                 BorderBrush = Theme.Brush(Color.FromArgb(0x40, 0xFF, 0xB5, 0x47)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(20),
@@ -276,8 +276,113 @@ namespace Arrakis
             var st = Settings.Current;
             var startup = new ToggleSwitch(st.StartWithWindows, "Start with Windows");
             startup.Toggled += on => { st.StartWithWindows = on; Settings.Save(); AutoStart.Apply(on); };
+
+            // Appearance
+            var restartNote = UI.Text("", 12, Theme.Amber, FontWeights.SemiBold);
+            var restartBtn = FlatButton.Primary("Restart Arrakis now", () => App.Instance.Restart());
+            restartBtn.Visibility = Visibility.Collapsed;
+            restartBtn.HorizontalAlignment = HorizontalAlignment.Left;
+            void NeedsRestart() { restartNote.Text = "Restart Arrakis to see the change."; restartBtn.Visibility = Visibility.Visible; }
+            string ThemeLabel(string v) => v == "Light" ? "Light" : v == "System" ? "Match Windows" : "Dark";
+            var theme = UI.Combo(new[] { "Dark", "Light", "Match Windows" }, ThemeLabel(st.Theme), v =>
+            {
+                st.Theme = v == "Match Windows" ? "System" : v;
+                Settings.Save();
+                NeedsRestart();
+            });
+            var accents = new WrapPanel();
+            var accentButtons = new List<FlatButton>();
+            foreach (var name in Theme.AccentNames)
+            {
+                var b = new FlatButton
+                {
+                    Width = 32, Height = 32, MinHeight = 32, Padding = new Thickness(0), CornerRadius = new CornerRadius(16),
+                    Background = Theme.Brush(Theme.AccentFor(name)), BorderThickness = new Thickness(3),
+                    BorderBrush = st.Accent == name ? Theme.Text : Brushes.Transparent, Margin = new Thickness(0, 0, 8, 0), ToolTip = name
+                };
+                FlatButton.SetA11yName(b, name + " accent");
+                string n = name;
+                b.Click += (s, e) =>
+                {
+                    st.Accent = n;
+                    Settings.Save();
+                    foreach (var x in accentButtons) x.BorderBrush = (string)x.ToolTip == n ? Theme.Text : Brushes.Transparent;
+                    NeedsRestart();
+                };
+                accentButtons.Add(b);
+                accents.Children.Add(b);
+            }
+
+            // Command bar
+            var cmdOn = new ToggleSwitch(st.CommandBar, "Command bar");
+            cmdOn.Toggled += on => { st.CommandBar = on; Settings.Save(); App.Instance.ApplyCommandBar(); };
+            var cmdKey = UI.TextInput(st.CommandBarHotkey, 150);
+            var cmdStatus = UI.Text("", 12, Theme.Muted);
+            var cmdApply = FlatButton.Secondary("Apply", () =>
+            {
+                string v = cmdKey.Text.Trim();
+                if (!Hotkeys.TryParse(v, out _, out _)) { cmdStatus.Text = "Try something like Alt+Space."; return; }
+                st.CommandBarHotkey = v;
+                Settings.Save();
+                App.Instance.ApplyCommandBar();
+                cmdStatus.Text = "Saved.";
+            });
+            cmdApply.MinHeight = 36;
+            var tryIt = FlatButton.Secondary("Try it", () => CommandBar.Toggle());
+            tryIt.MinHeight = 36;
+
+            // Updates
             var updates = new ToggleSwitch(st.CheckForUpdates, "Check for updates");
             updates.Toggled += on => { st.CheckForUpdates = on; Settings.Save(); };
+            var auto = new ToggleSwitch(st.AutoUpdate, "Install updates automatically");
+            auto.Toggled += on => { st.AutoUpdate = on; Settings.Save(); };
+            var updStatus = UI.Text("You're on " + Updates.CurrentText + ".", 12, Theme.Muted);
+            var updBtn = FlatButton.Secondary("Check now");
+            updBtn.MinHeight = 36;
+            updBtn.Click += async (s, e) =>
+            {
+                updBtn.IsEnabled = false;
+                updStatus.Text = "Checking...";
+                if (await Updates.Check())
+                {
+                    updStatus.Text = "Arrakis " + Updates.LatestVersion + " is available.";
+                    updBtn.Content = "Install " + Updates.LatestVersion;
+                    updBtn.IsEnabled = true;
+                    updBtn.Click += async (s2, e2) =>
+                    {
+                        updBtn.IsEnabled = false;
+                        await Updates.DownloadAndInstall(t => updStatus.Text = t);
+                    };
+                }
+                else
+                {
+                    updStatus.Text = Updates.LatestVersion == null ? "Couldn't reach GitHub." : "You're up to date (" + Updates.CurrentText + ").";
+                    updBtn.IsEnabled = true;
+                }
+            };
+
+            // Backup
+            var exportBtn = FlatButton.Secondary("Export...", () =>
+            {
+                var dlg = new Microsoft.Win32.SaveFileDialog { FileName = "Arrakis backup " + DateTime.Now.ToString("yyyy-MM-dd") + ".zip", Filter = "Arrakis backup (*.zip)|*.zip" };
+                if (dlg.ShowDialog(this) != true) return;
+                try { Backup.Export(dlg.FileName); MessageBox.Show(this, "Saved your settings to\n" + dlg.FileName, "Arrakis"); }
+                catch (Exception ex) { MessageBox.Show(this, "Couldn't export: " + ex.Message, "Arrakis"); }
+            });
+            var importBtn = FlatButton.Secondary("Import...", () =>
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Arrakis backup (*.zip)|*.zip" };
+                if (dlg.ShowDialog(this) != true) return;
+                if (MessageBox.Show(this, "This replaces your current Arrakis settings, clipboard history and stats with the backup, then restarts Arrakis.", "Import backup", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+                try
+                {
+                    foreach (var m in App.Instance.Modules) if (m.IsRunning) m.Stop();
+                    Backup.Import(dlg.FileName);
+                    App.Instance.Restart();
+                }
+                catch (Exception ex) { MessageBox.Show(this, "Couldn't import: " + ex.Message, "Arrakis"); }
+            });
+
             var folder = FlatButton.Secondary("Open settings folder", () => Shell.Open(Settings.Folder));
             var site = FlatButton.Secondary("Website and user guide", () => Shell.Open("https://bhxuk.github.io/arrakis/"));
             var issues = FlatButton.Secondary("Report a problem", () => Shell.Open("https://github.com/bhxuk/arrakis/issues"));
@@ -291,9 +396,28 @@ namespace Arrakis
 
             return UI.V(16,
                 UI.Card(UI.V(0,
-                    UI.SettingRow("Start with Windows", "Arrakis starts quietly in the background when you sign in.", startup),
+                    UI.SettingRow("Start with Windows", "Arrakis starts quietly in the background when you sign in.", startup)), 8),
+                UI.Label("Appearance"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("Theme", "Dark, light, or follow Windows.", theme),
                     UI.Divider(),
-                    UI.SettingRow("Check for updates", "Looks for a newer version on GitHub once a day. Nothing else is sent.", updates)), 8),
+                    UI.SettingRow("Accent colour", "Used for buttons, switches and highlights.", accents),
+                    UI.V(8, restartNote, restartBtn)), 8),
+                UI.Label("Command bar"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("Command bar", "Search apps, files, Windows settings, your clipboard and Arrakis actions from one box. Type a sum to work it out.", cmdOn),
+                    UI.Divider(),
+                    UI.SettingRow("Shortcut", null, UI.V(4, UI.H(8, cmdKey, cmdApply, tryIt), cmdStatus))), 8),
+                UI.Label("Updates"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("Check for updates", "Looks for a newer version on GitHub when Arrakis starts. Nothing else is sent.", updates),
+                    UI.Divider(),
+                    UI.SettingRow("Install updates automatically", "Downloads and installs new versions quietly, then reopens Arrakis. Never during a focus session.", auto),
+                    UI.Divider(),
+                    UI.SettingRow("Update now", null, UI.V(4, updBtn, updStatus))), 8),
+                UI.Label("Backup"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("Move to a new PC", "Export everything (settings, widgets, clipboard, snippets, focus and battery history) into one file, then import it on the other PC.", UI.H(8, exportBtn, importBtn))), 8),
                 UI.Label("Help"),
                 UI.Card(UI.V(0,
                     UI.SettingRow("Taskbar gone and won't come back?", "This brings it straight back. You can also run Start > Arrakis > Restore Windows taskbar.", taskbar),

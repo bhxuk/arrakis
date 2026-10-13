@@ -123,6 +123,12 @@ namespace Arrakis.Core
         public bool FirstRun { get; set; } = true;
         public bool StartWithWindows { get; set; } = true;
         public bool CheckForUpdates { get; set; } = true;
+        public bool AutoUpdate { get; set; } = true;
+        public string Theme { get; set; } = "Dark";          // Dark, Light, System
+        public string Accent { get; set; } = "Amber";
+        public bool CommandBar { get; set; } = true;
+        public string CommandBarHotkey { get; set; } = "Alt+Space";
+        public string CalendarUrl { get; set; } = "";       // an .ics link, used by the calendar widget and Focus
         public DockSettings Dock { get; set; } = new DockSettings();
         public WidgetSettings Widgets { get; set; } = new WidgetSettings();
         public WallpaperSettings Wallpaper { get; set; } = new WallpaperSettings();

@@ -177,6 +177,7 @@ namespace Arrakis.Core
 
         public static void UseDarkTitleBar(IntPtr hwnd)
         {
+            if (Theme.IsLight) return;
             try
             {
                 int on = 1;

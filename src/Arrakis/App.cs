@@ -22,7 +22,15 @@ namespace Arrakis
                 return 0;
             }
 
+            bool restarting = args.Any(a => a.Equals("--restarting", StringComparison.OrdinalIgnoreCase));
             _mutex = new Mutex(true, "Arrakis.SingleInstance.bhxuk", out bool isNew);
+            // After "Restart Arrakis" the old copy may still be closing: wait for it.
+            for (int i = 0; !isNew && restarting && i < 50; i++)
+            {
+                Thread.Sleep(200);
+                _mutex.Dispose();
+                _mutex = new Mutex(true, "Arrakis.SingleInstance.bhxuk", out isNew);
+            }
             if (!isNew)
             {
                 // Already running: ask the running copy to open its window.
@@ -35,7 +43,7 @@ namespace Arrakis
                 return 0;
             }
 
-            var app = new App { Background = args.Any(a => a.Equals("--background", StringComparison.OrdinalIgnoreCase)) };
+            var app = new App { Background = restarting || args.Any(a => a.Equals("--background", StringComparison.OrdinalIgnoreCase)) };
             int code = app.Run();
             GC.KeepAlive(_mutex);
             return code;
@@ -84,6 +92,7 @@ namespace Arrakis
 
             Tray = new Tray();
             StartModules();
+            ApplyCommandBar();
 
             // Let a second copy of Arrakis bring this one's window forward.
             _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "Arrakis.Show.bhxuk");
@@ -111,7 +120,14 @@ namespace Arrakis
                 {
                     timer.Stop();
                     if (await Updates.Check())
-                        Tray.Notify("Arrakis " + Updates.LatestVersion + " is available", "Open Arrakis > Settings to download it.");
+                    {
+                        if (Settings.Current.AutoUpdate && !Focus.IsActive)
+                        {
+                            Tray.Notify("Updating Arrakis to " + Updates.LatestVersion, "It'll be back in a few seconds.");
+                            await Updates.DownloadAndInstall();
+                        }
+                        else Tray.Notify("Arrakis " + Updates.LatestVersion + " is available", "Open Arrakis > Settings to install it.");
+                    }
                 };
                 timer.Start();
             }
@@ -151,6 +167,23 @@ namespace Arrakis
             Hub.Show();
             if (Hub.WindowState == WindowState.Minimized) Hub.WindowState = WindowState.Normal;
             Hub.Activate();
+        }
+
+        public void ApplyCommandBar()
+        {
+            Hotkeys.Unregister("command-bar");
+            if (!Settings.Current.CommandBar) return;
+            if (!Hotkeys.Register("command-bar", Settings.Current.CommandBarHotkey, CommandBar.Toggle))
+                Tray.Notify("Command bar shortcut unavailable", Settings.Current.CommandBarHotkey + " is used by another app. Choose another in Arrakis > Settings.");
+            CommandIndex.RefreshIfStale();
+        }
+
+        /// <summary>Starts a fresh copy of Arrakis and closes this one (used after theme changes and restores).</summary>
+        public void Restart()
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath, "--restarting") { UseShellExecute = false }); }
+            catch (Exception ex) { Log.Write("Restart failed: " + ex.Message); return; }
+            Quit();
         }
 
         public void Quit()

@@ -9,17 +9,54 @@ using System.Windows.Shapes;
 
 namespace Arrakis.Core
 {
-    /// <summary>The Arrakis colour palette.</summary>
+    /// <summary>The Arrakis colour palette. Light or dark and the accent colour are read once at start-up.</summary>
     public static class Theme
     {
-        public static readonly Color BgColor = Color.FromRgb(0x0F, 0x11, 0x15);
-        public static readonly Color PanelColor = Color.FromRgb(0x18, 0x1B, 0x22);
-        public static readonly Color SideColor = Color.FromRgb(0x14, 0x17, 0x1D);
-        public static readonly Color TextColor = Color.FromRgb(0xF3, 0xF1, 0xEC);
-        public static readonly Color MutedColor = Color.FromRgb(0xA7, 0xAB, 0xB5);
-        public static readonly Color AmberColor = Color.FromRgb(0xFF, 0xB5, 0x47);
-        public static readonly Color TealColor = Color.FromRgb(0x5E, 0xD3, 0xC3);
-        public static readonly Color GreenColor = Color.FromRgb(0x8F, 0xD1, 0x6A);
+        public static readonly bool IsLight = ResolveLight();
+        public static readonly Color AccentColor = ResolveAccent();
+
+        public static readonly string[] AccentNames = { "Amber", "Teal", "Blue", "Pink", "Green", "Purple" };
+
+        public static Color AccentFor(string name) => name switch
+        {
+            "Teal" => Color.FromRgb(0x3F, 0xC4, 0xB2),
+            "Blue" => Color.FromRgb(0x5B, 0x8C, 0xFF),
+            "Pink" => Color.FromRgb(0xF0, 0x6A, 0x9A),
+            "Green" => Color.FromRgb(0x7C, 0xC8, 0x5A),
+            "Purple" => Color.FromRgb(0xA0, 0x7C, 0xF0),
+            _ => Color.FromRgb(0xFF, 0xB5, 0x47)
+        };
+
+        private static bool ResolveLight()
+        {
+            string t = "Dark";
+            try { t = Settings.Current?.Theme ?? "Dark"; } catch { }
+            if (t == "Light") return true;
+            if (t == "System")
+            {
+                try
+                {
+                    using var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                    return k?.GetValue("AppsUseLightTheme") is int v && v == 1;
+                }
+                catch { }
+            }
+            return false;
+        }
+
+        private static Color ResolveAccent()
+        {
+            try { return AccentFor(Settings.Current?.Accent ?? "Amber"); } catch { return AccentFor("Amber"); }
+        }
+
+        public static readonly Color BgColor = IsLight ? Color.FromRgb(0xF6, 0xF5, 0xF2) : Color.FromRgb(0x0F, 0x11, 0x15);
+        public static readonly Color PanelColor = IsLight ? Color.FromRgb(0xFF, 0xFF, 0xFF) : Color.FromRgb(0x18, 0x1B, 0x22);
+        public static readonly Color SideColor = IsLight ? Color.FromRgb(0xEE, 0xEC, 0xE8) : Color.FromRgb(0x14, 0x17, 0x1D);
+        public static readonly Color TextColor = IsLight ? Color.FromRgb(0x17, 0x19, 0x1F) : Color.FromRgb(0xF3, 0xF1, 0xEC);
+        public static readonly Color MutedColor = IsLight ? Color.FromRgb(0x5B, 0x60, 0x6B) : Color.FromRgb(0xA7, 0xAB, 0xB5);
+        public static readonly Color AmberColor = AccentColor;
+        public static readonly Color TealColor = IsLight ? Color.FromRgb(0x1F, 0xA3, 0x92) : Color.FromRgb(0x5E, 0xD3, 0xC3);
+        public static readonly Color GreenColor = IsLight ? Color.FromRgb(0x4E, 0xA0, 0x3A) : Color.FromRgb(0x8F, 0xD1, 0x6A);
         public static readonly Color RedColor = Color.FromRgb(0xE2, 0x58, 0x5F);
 
         public static readonly SolidColorBrush Bg = Freeze(new SolidColorBrush(BgColor));
@@ -32,13 +69,16 @@ namespace Arrakis.Core
         public static readonly SolidColorBrush Green = Freeze(new SolidColorBrush(GreenColor));
         public static readonly SolidColorBrush Red = Freeze(new SolidColorBrush(RedColor));
         public static readonly SolidColorBrush Dark = Freeze(new SolidColorBrush(Color.FromRgb(0x1A, 0x12, 0x06)));
-        public static readonly SolidColorBrush Line = Freeze(new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)));
-        public static readonly SolidColorBrush Subtle = Freeze(new SolidColorBrush(Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF)));
-        public static readonly SolidColorBrush Off = Freeze(new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x4B)));
-        public static readonly SolidColorBrush Glass = Freeze(new SolidColorBrush(Color.FromArgb(0xD8, 0x12, 0x14, 0x1A)));
-        public static readonly SolidColorBrush GlassBorder = Freeze(new SolidColorBrush(Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF)));
-        public static readonly SolidColorBrush AmberTint = Freeze(new SolidColorBrush(Color.FromArgb(0x29, 0xFF, 0xB5, 0x47)));
+        public static readonly SolidColorBrush Line = Freeze(new SolidColorBrush(IsLight ? Color.FromArgb(0x1A, 0, 0, 0) : Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)));
+        public static readonly SolidColorBrush Subtle = Freeze(new SolidColorBrush(IsLight ? Color.FromArgb(0x0D, 0, 0, 0) : Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF)));
+        public static readonly SolidColorBrush Off = Freeze(new SolidColorBrush(IsLight ? Color.FromRgb(0xC4, 0xC8, 0xD0) : Color.FromRgb(0x3A, 0x3F, 0x4B)));
+        public static readonly SolidColorBrush Glass = Freeze(new SolidColorBrush(IsLight ? Color.FromArgb(0xEB, 0xF8, 0xF7, 0xF4) : Color.FromArgb(0xD8, 0x12, 0x14, 0x1A)));
+        public static readonly SolidColorBrush Popup = Freeze(new SolidColorBrush(IsLight ? Color.FromArgb(0xF7, 0xFB, 0xFA, 0xF8) : Color.FromArgb(0xF2, 0x14, 0x16, 0x1C)));
+        public static readonly SolidColorBrush GlassBorder = Freeze(new SolidColorBrush(IsLight ? Color.FromArgb(0x24, 0, 0, 0) : Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF)));
+        public static readonly SolidColorBrush AmberTint = Freeze(new SolidColorBrush(Color.FromArgb(IsLight ? (byte)0x30 : (byte)0x29, AccentColor.R, AccentColor.G, AccentColor.B)));
         public static readonly SolidColorBrush TealTint = Freeze(new SolidColorBrush(Color.FromArgb(0x29, 0x5E, 0xD3, 0xC3)));
+        public static readonly SolidColorBrush Stage = Freeze(new SolidColorBrush(IsLight ? Color.FromRgb(0xE4, 0xE2, 0xDE) : Color.FromRgb(0x0B, 0x0D, 0x11)));
+        public static readonly SolidColorBrush Warm = Freeze(new SolidColorBrush(IsLight ? Color.FromRgb(0xFF, 0xF4, 0xE3) : Color.FromRgb(0x1E, 0x1A, 0x12)));
 
         public static readonly FontFamily Font = new FontFamily("Segoe UI Variable Text, Segoe UI");
         public static readonly FontFamily Display = new FontFamily("Segoe UI Variable Display, Segoe UI");

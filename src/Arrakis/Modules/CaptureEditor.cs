@@ -161,7 +161,7 @@ namespace Arrakis.Modules
                 Content = _zoomHost,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Background = Theme.Brush("#0B0D11"),
+                Background = Theme.Stage,
                 Focusable = false
             };
             _scroll.PreviewMouseWheel += (s, e) =>

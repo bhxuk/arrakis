@@ -441,7 +441,7 @@ namespace Arrakis.Modules
             var body = UI.V(14, header, searchBox, filterRow, _scroll, _stackBar, hints);
             Content = new Border
             {
-                Background = Theme.Brush(Color.FromArgb(0xF2, 0x14, 0x16, 0x1C)),
+                Background = Theme.Popup,
                 BorderBrush = Theme.GlassBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(26),

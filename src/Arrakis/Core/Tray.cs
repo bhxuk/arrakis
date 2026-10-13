@@ -20,6 +20,7 @@ namespace Arrakis.Core
 
             var menu = new System.Windows.Forms.ContextMenuStrip();
             menu.Items.Add("Open Arrakis", null, (s, e) => App.Instance.ShowHub());
+            menu.Items.Add("Command bar", null, (s, e) => CommandBar.Toggle());
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menu.Items.Add("Clipboard", null, (s, e) => App.Instance.Clipboard.ShowPanel());
             var shot = new System.Windows.Forms.ToolStripMenuItem("Screenshot");

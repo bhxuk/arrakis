@@ -569,7 +569,7 @@ namespace Arrakis.Modules
             info.Margin = new Thickness(4, 8, 4, 2);
             _loupe = new Border
             {
-                Background = Theme.Brush(Color.FromArgb(0xF0, 0x12, 0x14, 0x1A)),
+                Background = Theme.Popup,
                 BorderBrush = Theme.GlassBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
