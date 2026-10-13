@@ -17,34 +17,57 @@ namespace Arrakis.Modules
     {
         public override string Id => "dock";
         public override string Name => "Dock";
-        public override string Description => "A floating dock with your apps, plus live music and focus timer.";
+        public override string Description => "A floating dock with window previews, folder stacks, live music and your focus timer.";
         public override string IconData => Icons.Dock;
         public override string ShortcutText => "Always on";
         public override bool IsEnabled { get => Settings.Current.Dock.Enabled; set => Settings.Current.Dock.Enabled = value; }
 
-        private DockWindow _window;
+        private readonly List<DockWindow> _windows = new List<DockWindow>();
         private DispatcherTimer _taskbarTimer;
 
         protected override void OnStart()
         {
             SeedPins();
-            _window = new DockWindow();
-            _window.Show();
+            OpenWindows();
             ApplyTaskbar();
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaysChanged;
         }
 
         protected override void OnStop()
         {
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaysChanged;
             _taskbarTimer?.Stop();
             TaskbarManager.Restore();
-            _window?.Close();
-            _window = null;
+            CloseWindows();
+        }
+
+        private void OnDisplaysChanged(object sender, EventArgs e)
+        {
+            Application.Current.Dispatcher.BeginInvoke(new Action(() => { if (IsRunning) { CloseWindows(); OpenWindows(); } }));
+        }
+
+        private void OpenWindows()
+        {
+            var screens = System.Windows.Forms.Screen.AllScreens;
+            foreach (var screen in screens)
+            {
+                if (!screen.Primary && !Settings.Current.Dock.AllMonitors) continue;
+                var w = new DockWindow(screen.DeviceName, screen.Primary);
+                _windows.Add(w);
+                w.Show();
+            }
+        }
+
+        private void CloseWindows()
+        {
+            foreach (var w in _windows.ToList()) w.Close();
+            _windows.Clear();
         }
 
         public void ApplyTaskbar()
         {
             _taskbarTimer?.Stop();
-            if (IsRunning || _window != null)
+            if (IsRunning || _windows.Count > 0)
             {
                 if (Settings.Current.Dock.HideTaskbar)
                 {
@@ -55,14 +78,28 @@ namespace Arrakis.Modules
                 }
                 else TaskbarManager.Restore();
             }
-            _window?.Reposition();
+            foreach (var w in _windows) w.Reposition();
         }
 
-        public void Refresh() => _window?.Rebuild(true);
+        private void ReopenWindows()
+        {
+            if (!IsRunning) return;
+            CloseWindows();
+            OpenWindows();
+        }
+
+        public void Refresh() { foreach (var w in _windows) w.Rebuild(true); }
 
         private static void SeedPins()
         {
             var d = Settings.Current.Dock;
+            if (!d.FoldersSeeded)
+            {
+                string downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                if (Directory.Exists(downloads)) d.Folders.Add(downloads);
+                d.FoldersSeeded = true;
+                Settings.Save();
+            }
             if (d.PinnedSeeded) return;
             string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             string pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
@@ -86,7 +123,7 @@ namespace Arrakis.Modules
             {
                 d.Style = v == "Minimal pill" ? "Pill" : v == "Edge bar" ? "Edge" : "Floating";
                 Settings.Save();
-                _window?.ApplyStyle();
+                foreach (var w in _windows) w.ApplyStyle();
             });
 
             var taskbar = new ToggleSwitch(d.HideTaskbar, "Hide the Windows taskbar");
@@ -99,10 +136,17 @@ namespace Arrakis.Modules
             magnify.Toggled += on => { d.Magnify = on; Settings.Save(); };
 
             var live = new ToggleSwitch(d.ShowLiveActivities, "Live activities");
-            live.Toggled += on => { d.ShowLiveActivities = on; Settings.Save(); _window?.Rebuild(true); };
+            live.Toggled += on => { d.ShowLiveActivities = on; Settings.Save(); Refresh(); };
+
+            var previews = new ToggleSwitch(d.Previews, "Window previews");
+            previews.Toggled += on => { d.Previews = on; Settings.Save(); };
+            var counts = new ToggleSwitch(d.WindowCounts, "Window counts");
+            counts.Toggled += on => { d.WindowCounts = on; Settings.Save(); Refresh(); };
+            var monitors = new ToggleSwitch(d.AllMonitors, "Dock on every screen");
+            monitors.Toggled += on => { d.AllMonitors = on; Settings.Save(); ReopenWindows(); };
 
             var size = new MiniSlider(36, 64, d.IconSize, null, 200) { Step = 2 };
-            size.ValueChanged += v => { d.IconSize = (int)v; Settings.Save(); _window?.Rebuild(true); };
+            size.ValueChanged += v => { d.IconSize = (int)v; Settings.Save(); Refresh(); };
 
             var pinned = UI.V(6);
             void RenderPins()
@@ -144,6 +188,37 @@ namespace Arrakis.Modules
             });
             addBtn.HorizontalAlignment = HorizontalAlignment.Left;
 
+            var folders = UI.V(6);
+            void RenderFolders()
+            {
+                folders.Children.Clear();
+                foreach (var f in d.Folders.ToList())
+                {
+                    var name = UI.Text(Path.GetFileName(f.TrimEnd('\\')) is string n && n.Length > 0 ? n : f, 14);
+                    name.VerticalAlignment = VerticalAlignment.Center;
+                    var remove = FlatButton.IconButton(Icons.Close, "Unpin folder", () => { d.Folders.Remove(f); Settings.Save(); Refresh(); RenderFolders(); }, 36);
+                    var row = new DockPanel { LastChildFill = true };
+                    DockPanel.SetDock(remove, System.Windows.Controls.Dock.Right);
+                    row.Children.Add(remove);
+                    row.Children.Add(UI.H(12, UI.GridIcon(Icons.Folder, 20, Theme.Amber), name, UI.Text(f, 12, Theme.Muted)));
+                    folders.Children.Add(row);
+                }
+                if (d.Folders.Count == 0) folders.Children.Add(UI.Text("No folders yet. Drag a folder onto the dock, or add one here.", 13, Theme.Muted));
+            }
+            RenderFolders();
+            var addFolder = FlatButton.Secondary("Pin a folder...", () =>
+            {
+                var dlg = new System.Windows.Forms.FolderBrowserDialog { Description = "Choose a folder to pin to the dock" };
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    d.Folders.Add(dlg.SelectedPath);
+                    Settings.Save();
+                    Refresh();
+                    RenderFolders();
+                }
+            });
+            addFolder.HorizontalAlignment = HorizontalAlignment.Left;
+
             return UI.V(16,
                 UI.Card(UI.V(0,
                     UI.SettingRow("Style", "Floating glass magnifies on hover. Minimal pill only shows a background when you hover. Edge bar runs the full width like the classic taskbar.", style),
@@ -156,9 +231,17 @@ namespace Arrakis.Modules
                     UI.Divider(),
                     UI.SettingRow("Live activities", "Show what's playing and your focus timer next to the dock.", live),
                     UI.Divider(),
-                    UI.SettingRow("Icon size", null, size)), 8),
+                    UI.SettingRow("Icon size", null, size),
+                    UI.Divider(),
+                    UI.SettingRow("Window previews", "Rest the mouse on an open app to see its windows. Click one to switch to it.", previews),
+                    UI.Divider(),
+                    UI.SettingRow("Window counts", "Show how many windows an app has open under its icon.", counts),
+                    UI.Divider(),
+                    UI.SettingRow("A dock on every screen", "Each screen gets its own dock with the windows that are on it.", monitors)), 8),
                 UI.Label("Pinned apps"),
-                UI.Card(UI.V(12, pinned, addBtn)));
+                UI.Card(UI.V(12, pinned, addBtn, UI.Text("Tip: drag a program or shortcut onto the dock to pin it.", 12, Theme.Muted))),
+                UI.Label("Folder stacks"),
+                UI.Card(UI.V(12, folders, addFolder, UI.Text("Click a folder in the dock to see its newest files.", 12, Theme.Muted))));
         }
 
         private static string StyleLabel(string s) => s == "Pill" ? "Minimal pill" : s == "Edge" ? "Edge bar" : "Floating glass";
@@ -173,6 +256,8 @@ namespace Arrakis.Modules
         public List<AppWindow> Windows = new List<AppWindow>();
         public Border Tile;
         public Border Dot;
+        public TextBlock Count;
+        public bool IsFolder;
     }
 
     public class DockWindow : Window
@@ -189,11 +274,23 @@ namespace Arrakis.Modules
         private bool _hidden;
         private int _lastActive;
         private const double WindowHeight = 170;
+        private readonly string _device;
+        private readonly bool _primary;
+        private IntPtr _monitor;
+        private Native.RECT _full, _work;
+        private DispatcherTimer _hoverTimer;
+        private DockItem _hoverItem;
+        private FrameworkElement _hoverTile;
 
         private DockSettings S => Settings.Current.Dock;
 
-        public DockWindow()
+        [System.Runtime.InteropServices.DllImport("shcore.dll")]
+        private static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out uint dpiX, out uint dpiY);
+
+        public DockWindow(string device, bool primary)
         {
+            _device = device;
+            _primary = primary;
             Title = "Arrakis Dock";
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
@@ -226,12 +323,19 @@ namespace Arrakis.Modules
             _root.Children.Add(_row);
             Content = _root;
 
+            _panel.AllowDrop = true;
+            _panel.DragOver += (s, e) =>
+            {
+                e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Link : DragDropEffects.None;
+                e.Handled = true;
+            };
+            _panel.Drop += (s, e) => OnDrop(e);
             _items.MouseMove += (s, e) => Magnify(e.GetPosition(_items).X);
             _items.MouseLeave += (s, e) => ResetSizes();
             _panel.MouseEnter += (s, e) => { if (S.Style == "Pill") _panel.Background = Theme.Glass; };
             _panel.MouseLeave += (s, e) => { if (S.Style == "Pill") _panel.Background = Theme.Brush(Color.FromArgb(0x01, 0, 0, 0)); };
 
-            SourceInitialized += (s, e) => WindowHelper.MakeToolWindow(this, true);
+            SourceInitialized += (s, e) => { WindowHelper.MakeToolWindow(this, true); Reposition(); };
             Loaded += (s, e) => { Reposition(); ApplyStyle(); Rebuild(true); };
 
             MediaService.Instance.Changed += RebuildLive;
@@ -250,14 +354,19 @@ namespace Arrakis.Modules
 
         public void Reposition()
         {
-            var mon = Native.GetPrimaryMonitor();
-            double scale = WindowHelper.DpiScale(this);
-            var full = mon.rcMonitor;
-            var work = TaskbarManager.IsHidden ? full : mon.rcWork;
-            Left = full.Left / scale;
-            Width = full.Width / scale;
-            Height = WindowHeight;
-            Top = work.Bottom / scale - WindowHeight;
+            var screen = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(sc => sc.DeviceName == _device) ?? System.Windows.Forms.Screen.PrimaryScreen;
+            var b = screen.Bounds;
+            var wa = screen.WorkingArea;
+            _full = new Native.RECT { Left = b.Left, Top = b.Top, Right = b.Right, Bottom = b.Bottom };
+            _work = new Native.RECT { Left = wa.Left, Top = wa.Top, Right = wa.Right, Bottom = wa.Bottom };
+            if (TaskbarManager.IsHidden) _work = _full;
+            _monitor = Native.MonitorFromPoint(new Native.POINT { X = b.Left + b.Width / 2, Y = b.Top + b.Height / 2 }, Native.MONITOR_DEFAULTTONEAREST);
+            double scale = 1;
+            try { if (GetDpiForMonitor(_monitor, 0, out uint dx, out _) == 0) scale = dx / 96.0; } catch { }
+            int h = (int)Math.Round(WindowHeight * scale);
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (hwnd != IntPtr.Zero)
+                Native.SetWindowPos(hwnd, Native.HWND_TOPMOST, _full.Left, _work.Bottom - h, _full.Width, h, Native.SWP_NOACTIVATE);
         }
 
         public void ApplyStyle()
@@ -292,7 +401,7 @@ namespace Arrakis.Modules
             {
                 _row.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _items.HorizontalAlignment = HorizontalAlignment.Center;
-                _panel.Width = Width;
+                _panel.Width = ActualWidth > 0 ? ActualWidth : Width;
                 _row.Children.Remove(_live);
                 _items.Children.Remove(_live);
             }
@@ -315,9 +424,12 @@ namespace Arrakis.Modules
             try { windows = WindowTracker.GetAppWindows(); }
             catch { return; }
 
+            if (S.AllMonitors && _monitor != IntPtr.Zero) windows = windows.Where(w => w.Monitor == _monitor).ToList();
             var items = new List<DockItem>();
             foreach (var p in S.Pinned)
                 items.Add(new DockItem { Key = p.ToLowerInvariant(), Path = p, Name = WindowTracker.FriendlyName(p), Pinned = true });
+            foreach (var f in S.Folders)
+                items.Add(new DockItem { Key = "folder:" + f.ToLowerInvariant(), Path = f, Name = Path.GetFileName(f.TrimEnd('\\')), Pinned = true, IsFolder = true });
             foreach (var w in windows)
             {
                 var existing = items.FirstOrDefault(i => i.Key == w.Key);
@@ -329,14 +441,14 @@ namespace Arrakis.Modules
                 existing.Windows.Add(w);
             }
 
-            string sig = string.Join("|", items.Select(i => i.Key)) + "#" + S.IconSize + S.Style;
+            string sig = string.Join("|", items.Select(i => i.Key)) + "#" + S.IconSize + S.Style + S.WindowCounts;
             if (!force && sig == _signature)
             {
                 // Same apps: refresh window lists and the running dots.
                 for (int i = 0; i < items.Count && i < _dockItems.Count; i++)
                 {
                     _dockItems[i].Windows = items[i].Windows;
-                    _dockItems[i].Dot.Background = items[i].Windows.Count > 0 ? Theme.Brush(Color.FromArgb(0xD9, 0xFF, 0xFF, 0xFF)) : Brushes.Transparent;
+                    UpdateDot(_dockItems[i]);
                 }
                 return;
             }
@@ -349,7 +461,7 @@ namespace Arrakis.Modules
                 _items.Children.Add(BuildTile(item));
                 _dockItems.Add(item);
             }
-            if (S.Style == "Edge" && S.ShowLiveActivities)
+            if (S.Style == "Edge" && S.ShowLiveActivities && _primary)
             {
                 _items.Children.Remove(_live);
                 _live.Margin = new Thickness(16, 0, 0, 4);
@@ -382,13 +494,45 @@ namespace Arrakis.Modules
             return stack;
         }
 
+        private static readonly Brush DotBrush = Theme.Brush(Theme.IsLight ? Color.FromArgb(0xC0, 0x20, 0x22, 0x28) : Color.FromArgb(0xD9, 0xFF, 0xFF, 0xFF));
+
+        private void UpdateDot(DockItem item)
+        {
+            int n = item.Windows.Count;
+            item.Dot.Background = n > 0 ? DotBrush : Brushes.Transparent;
+            if (S.WindowCounts && n > 1)
+            {
+                item.Count.Text = n.ToString();
+                item.Dot.Width = double.NaN;
+                item.Dot.Height = 13;
+                item.Dot.Padding = new Thickness(4, 0, 4, 0);
+                item.Dot.CornerRadius = new CornerRadius(6.5);
+                item.Count.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                item.Dot.Width = 4;
+                item.Dot.Height = 4;
+                item.Dot.Padding = new Thickness(0);
+                item.Dot.CornerRadius = new CornerRadius(2);
+                item.Count.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private FrameworkElement BuildTile(DockItem item)
         {
             double size = S.IconSize;
-            ImageSource icon = IconCache.ForFile(item.Path);
+            ImageSource icon = item.IsFolder ? null : IconCache.ForFile(item.Path);
             UIElement content;
             if (icon != null)
                 content = new Image { Source = icon, Width = size * 0.78, Height = size * 0.78 };
+            else if (item.IsFolder)
+            {
+                var g = UI.GridIcon(Icons.Folder, size * 0.5, Theme.Amber, 1.8);
+                g.HorizontalAlignment = HorizontalAlignment.Center;
+                g.VerticalAlignment = VerticalAlignment.Center;
+                content = g;
+            }
             else
             {
                 var letter = UI.Text(string.IsNullOrEmpty(item.Name) ? "?" : item.Name.Substring(0, 1).ToUpperInvariant(), size * 0.42, Theme.Text, FontWeights.Bold, true);
@@ -401,12 +545,13 @@ namespace Arrakis.Modules
                 Width = size,
                 Height = size,
                 CornerRadius = new CornerRadius(size * 0.27),
-                Background = icon != null ? Brushes.Transparent : Theme.Off,
+                Background = icon != null ? Brushes.Transparent : item.IsFolder ? Theme.AmberTint : Theme.Off,
                 Child = content,
-                ToolTip = item.Name,
+                ToolTip = item.IsFolder ? item.Name + " (folder)" : item.Name,
                 Cursor = Cursors.Hand
             };
             RenderOptions.SetBitmapScalingMode(tile, BitmapScalingMode.HighQuality);
+            var count = new TextBlock { FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = Theme.IsLight ? Brushes.White : Theme.Bg, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Visibility = Visibility.Collapsed };
             var dot = new Border
             {
                 Width = 4,
@@ -414,15 +559,24 @@ namespace Arrakis.Modules
                 CornerRadius = new CornerRadius(2),
                 Margin = new Thickness(0, 5, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Background = item.Windows.Count > 0 ? Theme.Brush(Color.FromArgb(0xD9, 0xFF, 0xFF, 0xFF)) : Brushes.Transparent
+                Child = count
             };
             item.Tile = tile;
             item.Dot = dot;
+            item.Count = count;
+            UpdateDot(item);
             var stack = new StackPanel { Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom, Tag = "tile" };
             stack.Children.Add(tile);
             stack.Children.Add(dot);
-            tile.MouseLeftButtonUp += (s, e) => Activate(item);
-            tile.MouseRightButtonUp += (s, e) => { ShowMenu(item, tile); e.Handled = true; };
+            tile.MouseLeftButtonUp += (s, e) =>
+            {
+                HidePreview();
+                if (item.IsFolder) FolderStack.Show(item.Path, tile);
+                else Activate(item);
+            };
+            tile.MouseRightButtonUp += (s, e) => { HidePreview(); ShowMenu(item, tile); e.Handled = true; };
+            tile.MouseEnter += (s, e) => StartHover(item, tile);
+            tile.MouseLeave += (s, e) => { if (_hoverTile == tile) { _hoverTimer?.Stop(); } };
             return stack;
         }
 
@@ -451,6 +605,24 @@ namespace Arrakis.Modules
         private void ShowMenu(DockItem item, FrameworkElement target)
         {
             var menu = new ContextMenu();
+            if (item.IsFolder)
+            {
+                var open = new MenuItem { Header = "Open folder" };
+                open.Click += (s, e) => Shell.Open(item.Path);
+                var unpin = new MenuItem { Header = "Unpin from dock" };
+                unpin.Click += (s, e) =>
+                {
+                    S.Folders.RemoveAll(f => string.Equals(f, item.Path, StringComparison.OrdinalIgnoreCase));
+                    Settings.Save();
+                    Rebuild(true);
+                };
+                menu.Items.Add(open);
+                menu.Items.Add(unpin);
+                menu.PlacementTarget = target;
+                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top;
+                menu.IsOpen = true;
+                return;
+            }
             foreach (var w in item.Windows)
             {
                 var wi = new MenuItem { Header = w.Title.Length > 60 ? w.Title.Substring(0, 57) + "..." : w.Title };
@@ -483,6 +655,51 @@ namespace Arrakis.Modules
             menu.PlacementTarget = target;
             menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top;
             menu.IsOpen = true;
+        }
+
+        private void StartHover(DockItem item, FrameworkElement tile)
+        {
+            _hoverItem = item;
+            _hoverTile = tile;
+            if (!S.Previews || item.IsFolder || item.Windows.Count == 0) return;
+            _hoverTimer?.Stop();
+            _hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
+            _hoverTimer.Tick += (s, e) =>
+            {
+                _hoverTimer.Stop();
+                if (_hoverTile == tile && tile.IsMouseOver && item.Windows.Count > 0) WindowPreview.Show(item.Windows, tile);
+            };
+            _hoverTimer.Start();
+        }
+
+        private static void HidePreview() => WindowPreview.CloseCurrent();
+
+        private void OnDrop(DragEventArgs e)
+        {
+            if (!(e.Data.GetData(DataFormats.FileDrop) is string[] files)) return;
+            bool changed = false;
+            foreach (var f in files)
+            {
+                if (Directory.Exists(f))
+                {
+                    if (!S.Folders.Contains(f, StringComparer.OrdinalIgnoreCase)) { S.Folders.Add(f); changed = true; }
+                }
+                else if (File.Exists(f))
+                {
+                    string ext = Path.GetExtension(f).ToLowerInvariant();
+                    if ((ext == ".exe" || ext == ".lnk" || ext == ".url" || ext == ".bat" || ext == ".cmd") && !S.Pinned.Contains(f, StringComparer.OrdinalIgnoreCase))
+                    {
+                        S.Pinned.Add(f);
+                        changed = true;
+                    }
+                }
+            }
+            if (changed)
+            {
+                Settings.Save();
+                App.Instance.Dock.Refresh();
+            }
+            e.Handled = true;
         }
 
         private void Magnify(double mouseX)
@@ -528,7 +745,7 @@ namespace Arrakis.Modules
         private void RebuildLive()
         {
             _live.Children.Clear();
-            if (!S.ShowLiveActivities) return;
+            if (!S.ShowLiveActivities || !_primary) { _live.Visibility = Visibility.Collapsed; return; }
             var media = MediaService.Instance;
             if (media.HasMedia) _live.Children.Add(MusicCapsule(media));
             var focus = App.Instance.Focus;
@@ -596,7 +813,7 @@ namespace Arrakis.Modules
                     if (Native.IsZoomed(fg)) covers = true;
                     else if (Native.GetWindowRect(fg, out var r))
                     {
-                        var mon = Native.GetPrimaryMonitor().rcMonitor;
+                        var mon = _full;
                         var sb = new System.Text.StringBuilder(64);
                         Native.GetClassName(fg, sb, sb.Capacity);
                         string cls = sb.ToString();
@@ -614,7 +831,7 @@ namespace Arrakis.Modules
         private bool IsMouseNearBottom()
         {
             Native.GetCursorPos(out var pt);
-            var mon = Native.GetPrimaryMonitor().rcMonitor;
+            var mon = _full;
             return pt.Y >= mon.Bottom - 4 && pt.X >= mon.Left && pt.X <= mon.Right;
         }
 

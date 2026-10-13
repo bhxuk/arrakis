@@ -14,6 +14,7 @@ namespace Arrakis.Modules
         public string Path;
         public string Title;
         public string Key;
+        public IntPtr Monitor;
     }
 
     /// <summary>Finds the open app windows, like the taskbar does.</summary>
@@ -55,7 +56,7 @@ namespace Arrakis.Modules
                     }
                     string file = System.IO.Path.GetFileName(path).ToLowerInvariant();
                     string key = file == "applicationframehost.exe" ? "uwp:" + title : path.ToLowerInvariant();
-                    list.Add(new AppWindow { Handle = h, Path = path, Title = title, Key = key });
+                    list.Add(new AppWindow { Handle = h, Path = path, Title = title, Key = key, Monitor = Native.MonitorFromWindow(h, Native.MONITOR_DEFAULTTONEAREST) });
                 }
                 catch { }
                 return true;

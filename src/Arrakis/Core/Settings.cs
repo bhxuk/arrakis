@@ -16,6 +16,11 @@ namespace Arrakis.Core
         public bool ShowLiveActivities { get; set; } = true;
         public List<string> Pinned { get; set; } = new List<string>();
         public bool PinnedSeeded { get; set; } = false;
+        public List<string> Folders { get; set; } = new List<string>();
+        public bool FoldersSeeded { get; set; } = false;
+        public bool Previews { get; set; } = true;
+        public bool WindowCounts { get; set; } = true;
+        public bool AllMonitors { get; set; } = false;
     }
 
     public class WidgetInstance
