@@ -31,6 +31,9 @@ namespace Arrakis.Core
         public double Top { get; set; } = double.NaN;
         public string Text { get; set; } = "";
         public DateTime? Date { get; set; }
+        public string Size { get; set; } = "M";          // S, M, L
+        public List<string> List { get; set; } = new List<string>();
+        public string Source { get; set; } = "";
     }
 
     public class WidgetSettings
@@ -44,6 +47,9 @@ namespace Arrakis.Core
         public bool Fahrenheit { get; set; } = false;
         public List<WidgetInstance> Items { get; set; } = new List<WidgetInstance>();
         public bool Seeded { get; set; } = false;
+        public bool SnapToGrid { get; set; } = true;
+        public bool MeetingAlerts { get; set; } = true;
+        public Dictionary<string, List<WidgetInstance>> Layouts { get; set; } = new Dictionary<string, List<WidgetInstance>>();
     }
 
     public class WallpaperSettings

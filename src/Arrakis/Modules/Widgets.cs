@@ -17,7 +17,7 @@ namespace Arrakis.Modules
     {
         public override string Id => "widgets";
         public override string Name => "Widgets";
-        public override string Description => "Weather, calendar, system rings, notes and more on your desktop.";
+        public override string Description => "Weather, calendar, agenda, to-dos, world clocks, photos, stocks, news and more on your desktop.";
         public override string IconData => Icons.Widgets;
         public override string ShortcutText => "Ctrl+Alt+W";
         public override bool IsEnabled { get => Settings.Current.Widgets.Enabled; set => Settings.Current.Widgets.Enabled = value; }
@@ -31,12 +31,21 @@ namespace Arrakis.Modules
             ("Battery", "Battery", "Small", Icons.Battery),
             ("NowPlaying", "Now playing", "Medium", Icons.Music),
             ("Notes", "Notes", "Small", Icons.Note),
-            ("Countdown", "Countdown", "Small", Icons.Timer)
+            ("Countdown", "Countdown", "Small", Icons.Timer),
+            ("Agenda", "Agenda", "Medium", Icons.Calendar),
+            ("Todo", "To-do list", "Medium", Icons.Check),
+            ("Launch", "Quick launch", "Wide", Icons.Dock),
+            ("WorldClock", "World clocks", "Medium", Icons.Clock),
+            ("Photo", "Photo frame", "Medium", Icons.Wallpaper),
+            ("Stocks", "Stocks", "Medium", "M4 19h16M6 15l4-4 3 3 5-6M14 8h4v4"),
+            ("News", "Headlines", "Medium", Icons.Lines)
         };
 
         private readonly List<WidgetWindow> _windows = new List<WidgetWindow>();
         private DispatcherTimer _fast;
         private DispatcherTimer _weather;
+        private DispatcherTimer _slow;
+        private readonly HashSet<string> _alerted = new HashSet<string>();
         private bool _dimmed;
         public bool EditMode { get; private set; }
         public event Action ListChanged;
@@ -55,7 +64,20 @@ namespace Arrakis.Modules
             _weather.Start();
             Weather.Updated += OnWeather;
             MediaService.Instance.Changed += OnMedia;
+            CalendarFeed.Updated += OnCalendar;
             _ = Weather.Refresh();
+            _ = CalendarFeed.Refresh();
+            // Calendar, headlines, stocks and photos refresh on a slower beat; meeting alerts are checked every minute.
+            int minutes = 0;
+            _slow = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+            _slow.Tick += async (s, e) =>
+            {
+                minutes++;
+                CheckMeetings();
+                foreach (var w in _windows) w.SlowTick(minutes);
+                if (minutes % 15 == 0) await CalendarFeed.Refresh();
+            };
+            _slow.Start();
             Hotkeys.Register("widgets", "Ctrl+Alt+W", ToggleEditMode);
         }
 
@@ -63,6 +85,8 @@ namespace Arrakis.Modules
         {
             _fast?.Stop();
             _weather?.Stop();
+            _slow?.Stop();
+            CalendarFeed.Updated -= OnCalendar;
             Weather.Updated -= OnWeather;
             MediaService.Instance.Changed -= OnMedia;
             Hotkeys.Unregister("widgets");
@@ -72,6 +96,20 @@ namespace Arrakis.Modules
         }
 
         private void OnWeather() => Application.Current.Dispatcher.BeginInvoke(new Action(() => { foreach (var w in _windows) w.Rebuild(); }));
+        private void OnCalendar() => Application.Current.Dispatcher.BeginInvoke(new Action(() => { foreach (var w in _windows.Where(x => x.Item.Kind == "Agenda" || x.Item.Kind == "Calendar")) w.Rebuild(); }));
+
+        private void CheckMeetings()
+        {
+            if (!S.MeetingAlerts || !CalendarFeed.IsSet) return;
+            foreach (var ev in CalendarFeed.Upcoming(10))
+            {
+                if (ev.AllDay) continue;
+                double mins = (ev.Start - DateTime.Now).TotalMinutes;
+                if (mins > 0 && mins <= 10 && _alerted.Add(ev.Uid))
+                    App.Instance.Tray.Notify(ev.Title + " in " + Math.Max(1, (int)Math.Round(mins)) + " min", ev.Start.ToString("HH:mm") + (string.IsNullOrEmpty(ev.Location) ? "" : " · " + ev.Location));
+            }
+        }
+
         private void OnMedia() { foreach (var w in _windows.Where(x => x.Item.Kind == "NowPlaying")) w.Rebuild(); }
 
         private void Seed()
@@ -124,6 +162,11 @@ namespace Arrakis.Modules
             var item = new WidgetInstance { Kind = kind };
             if (kind == "Countdown") { item.Text = "Weekend"; item.Date = NextSaturday(); }
             if (kind == "Notes") item.Text = "Double-click to type a note";
+            if (kind == "Todo") item.List = new List<string> { "[ ] Try the to-do widget", "[x] Install Arrakis" };
+            if (kind == "WorldClock") item.List = new List<string> { "Eastern Standard Time", "Pacific Standard Time", "Tokyo Standard Time" };
+            if (kind == "Stocks") item.List = new List<string> { "AAPL.US", "MSFT.US", "^UKX" };
+            if (kind == "News") item.Source = "https://feeds.bbci.co.uk/news/rss.xml";
+            if (kind == "Photo") item.Source = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
             S.Items.Add(item);
             Settings.Save();
             if (!IsRunning) App.Instance.SetModuleEnabled(this, true);
@@ -161,6 +204,26 @@ namespace Arrakis.Modules
         public void RestyleAll()
         {
             foreach (var w in _windows) w.Rebuild();
+        }
+
+        /// <summary>Saves where everything is, so you can switch between setups like Work and Gaming.</summary>
+        public void SaveLayout(string name)
+        {
+            var copy = System.Text.Json.JsonSerializer.Deserialize<List<WidgetInstance>>(System.Text.Json.JsonSerializer.Serialize(S.Items, Settings.Json), Settings.Json);
+            S.Layouts[name] = copy;
+            Settings.Save();
+        }
+
+        public void LoadLayout(string name)
+        {
+            if (!S.Layouts.TryGetValue(name, out var layout)) return;
+            var copy = System.Text.Json.JsonSerializer.Deserialize<List<WidgetInstance>>(System.Text.Json.JsonSerializer.Serialize(layout, Settings.Json), Settings.Json);
+            foreach (var w in _windows.ToList()) w.Close();
+            _windows.Clear();
+            S.Items = copy;
+            Settings.Save();
+            if (IsRunning) foreach (var item in S.Items) Open(item);
+            ListChanged?.Invoke();
         }
 
         public override UIElement BuildPage()
@@ -233,6 +296,47 @@ namespace Arrakis.Modules
             var fahrenheit = new ToggleSwitch(S.Fahrenheit, "Fahrenheit");
             fahrenheit.Toggled += async on => { S.Fahrenheit = on; Settings.Save(); await Weather.Refresh(); };
 
+            var calUrl = UI.TextInput(Settings.Current.CalendarUrl, 300);
+            var calStatus = UI.Text(CalendarFeed.IsSet ? (CalendarFeed.LastError == null ? CalendarFeed.Events.Count + " events in the next month." : "Couldn't read it: " + CalendarFeed.LastError) : "Not connected.", 12, Theme.Muted);
+            var calSave = FlatButton.Secondary("Connect", async () =>
+            {
+                Settings.Current.CalendarUrl = calUrl.Text.Trim();
+                Settings.Save();
+                calStatus.Text = "Reading your calendar...";
+                await CalendarFeed.Refresh();
+                calStatus.Text = !CalendarFeed.IsSet ? "Not connected." : CalendarFeed.LastError == null ? "Connected. " + CalendarFeed.Events.Count + " events in the next month." : "Couldn't read it: " + CalendarFeed.LastError;
+            });
+            calSave.MinHeight = 36;
+            var alerts = new ToggleSwitch(S.MeetingAlerts, "Meeting alerts");
+            alerts.Toggled += on => { S.MeetingAlerts = on; Settings.Save(); };
+            var snap = new ToggleSwitch(S.SnapToGrid, "Snap to grid");
+            snap.Toggled += on => { S.SnapToGrid = on; Settings.Save(); };
+
+            var layoutName = UI.TextInput("", 200);
+            var layoutList = UI.V(4);
+            void RenderLayouts()
+            {
+                layoutList.Children.Clear();
+                foreach (var name in S.Layouts.Keys.ToList())
+                {
+                    string n = name;
+                    var load = FlatButton.Secondary("Switch to", () => LoadLayout(n));
+                    load.MinHeight = 34;
+                    var del = FlatButton.IconButton(Icons.Trash, "Delete layout", () => { S.Layouts.Remove(n); Settings.Save(); RenderLayouts(); }, 34);
+                    layoutList.Children.Add(UI.SettingRow(n, S.Layouts[n].Count + " widgets", UI.H(8, load, del)));
+                }
+                if (S.Layouts.Count == 0) layoutList.Children.Add(UI.Text("No saved layouts yet.", 13, Theme.Muted));
+            }
+            RenderLayouts();
+            var saveLayout = FlatButton.Secondary("Save current layout", () =>
+            {
+                string n = string.IsNullOrWhiteSpace(layoutName.Text) ? "Layout " + (S.Layouts.Count + 1) : layoutName.Text.Trim();
+                SaveLayout(n);
+                layoutName.Text = "";
+                RenderLayouts();
+            });
+            saveLayout.MinHeight = 36;
+
             var list = UI.V(4);
             void RenderList()
             {
@@ -261,7 +365,19 @@ namespace Arrakis.Modules
                     UI.Divider(),
                     UI.SettingRow("Weather city", null, UI.V(6, UI.H(8, city, find), cityStatus)),
                     UI.Divider(),
-                    UI.SettingRow("Use Fahrenheit", null, fahrenheit)), 8),
+                    UI.SettingRow("Use Fahrenheit", null, fahrenheit),
+                    UI.Divider(),
+                    UI.SettingRow("Snap to grid", "Widgets line up neatly when you let go of them.", snap)), 8),
+                UI.Label("Calendar"),
+                UI.Card(UI.V(0,
+                    UI.SettingRow("Calendar link", "Paste your calendar's .ics link. In Google Calendar it's Settings > your calendar > Secret address in iCal format. In Outlook, publish your calendar and copy the ICS link.", UI.V(4, UI.H(8, calUrl, calSave), calStatus)),
+                    UI.Divider(),
+                    UI.SettingRow("Meeting alerts", "A heads-up 10 minutes before each event.", alerts)), 8),
+                UI.Label("Layouts"),
+                UI.Card(UI.V(10,
+                    UI.Text("Save where your widgets are, then switch between setups like Work and Gaming.", 13, Theme.Muted),
+                    UI.H(8, layoutName, saveLayout),
+                    layoutList), 16),
                 UI.Label("On your desktop"),
                 UI.Card(list, 12));
         }
@@ -273,7 +389,7 @@ namespace Arrakis.Modules
         public UniformGrid4() { Columns = 4; }
     }
 
-    public class WidgetWindow : Window
+    public partial class WidgetWindow : Window
     {
         private readonly WidgetsModule _module;
         public WidgetInstance Item { get; }
@@ -313,6 +429,11 @@ namespace Arrakis.Modules
                 if (S.Locked) return;
                 if (e.OriginalSource is TextBox || IsInsideButton(e.OriginalSource as DependencyObject)) return;
                 try { DragMove(); } catch { }
+                if (S.SnapToGrid)
+                {
+                    Left = Math.Round(Left / 16) * 16;
+                    Top = Math.Round(Top / 16) * 16;
+                }
                 Item.Left = Left;
                 Item.Top = Top;
                 Settings.Save();
@@ -352,6 +473,15 @@ namespace Arrakis.Modules
                 edit.Click += (s, e) => EditCountdown();
                 menu.Items.Add(edit);
             }
+            AddKindMenu(menu);
+            var size = new MenuItem { Header = "Size" };
+            foreach (var (code, label) in new[] { ("S", "Small"), ("M", "Medium"), ("L", "Large") })
+            {
+                var mi = new MenuItem { Header = label, IsChecked = (Item.Size ?? "M") == code };
+                mi.Click += (s, e) => { Item.Size = code; Settings.Save(); Rebuild(); };
+                size.Items.Add(mi);
+            }
+            menu.Items.Add(size);
             var lockItem = new MenuItem { Header = S.Locked ? "Unlock widgets" : "Lock widgets" };
             lockItem.Click += (s, e) => { S.Locked = !S.Locked; Settings.Save(); };
             menu.Items.Add(lockItem);
@@ -410,6 +540,8 @@ namespace Arrakis.Modules
         {
             _tick = null;
             ApplyFrameStyle();
+            double scale = (Item.Size ?? "M") == "S" ? 0.84 : Item.Size == "L" ? 1.2 : 1.0;
+            _frame.LayoutTransform = Math.Abs(scale - 1) < 0.01 ? Transform.Identity : new ScaleTransform(scale, scale);
             UIElement body = Item.Kind switch
             {
                 "Clock" => Clock(),
@@ -420,6 +552,13 @@ namespace Arrakis.Modules
                 "NowPlaying" => NowPlaying(),
                 "Notes" => Notes(),
                 "Countdown" => Countdown(),
+                "Agenda" => AgendaBody(),
+                "Todo" => TodoBody(),
+                "Launch" => LaunchBody(),
+                "WorldClock" => WorldClockBody(),
+                "Photo" => PhotoBody(),
+                "Stocks" => StocksBody(),
+                "News" => NewsBody(),
                 _ => UI.Text("Unknown widget")
             };
             if (_module.EditMode)
@@ -573,13 +712,20 @@ namespace Arrakis.Modules
                 var t = UI.Text(d.ToString(), 12, isToday ? Theme.Dark : d < today.Day ? Theme.Muted : Theme.Text, FontWeights.SemiBold);
                 t.TextAlignment = TextAlignment.Center;
                 t.VerticalAlignment = VerticalAlignment.Center;
+                var dayDate = new DateTime(today.Year, today.Month, d);
+                bool hasEvents = CalendarFeed.IsSet && CalendarFeed.On(dayDate).Any();
+                var cell = new Grid();
+                cell.Children.Add(t);
+                if (hasEvents)
+                    cell.Children.Add(new Border { Width = 4, Height = 4, CornerRadius = new CornerRadius(2), Background = isToday ? Theme.Dark : Theme.Teal, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2) });
                 grid.Children.Add(new Border
                 {
                     Height = 26,
                     CornerRadius = new CornerRadius(8),
                     Background = isToday ? Theme.Amber : Brushes.Transparent,
-                    Child = t,
-                    Margin = new Thickness(1)
+                    Child = cell,
+                    Margin = new Thickness(1),
+                    ToolTip = hasEvents ? string.Join("\n", CalendarFeed.On(dayDate).Take(5).Select(ev => (ev.AllDay ? "All day" : ev.Start.ToString("HH:mm")) + "  " + ev.Title)) : null
                 });
             }
             var v = UI.V(0, header, names, grid);
