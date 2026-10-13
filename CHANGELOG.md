@@ -1,5 +1,32 @@
 # What's new
 
+## 1.3.0 (13 October 2026)
+
+Three new modules, so Arrakis now has ten.
+
+**Quick controls** (Ctrl+Alt+Q)
+- One panel with switches for Wi-Fi, Bluetooth, Do not disturb, dark mode, Night light and the microphone.
+- Brightness sliders for your laptop screen and external monitors that support DDC/CI.
+- Master volume, the output device (speakers, headphones and so on) and a volume slider and mute button for each app.
+- Power mode chips: Battery saver, Balanced or Best performance.
+
+**Quick notes** (Ctrl+Alt+N)
+- A fresh note from anywhere with one shortcut. Notes save as you type.
+- Search every note, pick from six colours, copy or delete.
+- Pin any note to the desktop as a sticky you can edit in place.
+- Notes show up in the command bar and are included in backups.
+
+**Network**
+- Speed test for download, upload, ping and jitter, with your recent results.
+- A live ping graph with typical ping, jitter and packet loss, and a new Ping widget.
+- Tips on what's slowing your connection: signal, band, channel congestion, link speed, cables, ping and packet loss.
+- A scan of the devices on your network.
+- Notifications when the internet drops and when it's back.
+
+**Also**
+- New command bar actions: Quick controls, New note, Run a speed test, dark mode, Do not disturb and mute.
+- The tray menu has Quick controls, New note and Run a speed test.
+
 ## 1.2.1 (13 October 2026)
 
 - **One-click updates everywhere**: the update button on the Home page now downloads and installs the new version

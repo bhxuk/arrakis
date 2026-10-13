@@ -7,7 +7,8 @@
 **Your whole desktop, in one small app.**
 
 A dock, desktop widgets, a wallpaper that follows the sun and the weather, a clipboard with snippets,
-a screenshot editor, a focus timer and battery health, plus a command bar to reach all of it, for Windows 10 and 11.
+a screenshot editor, a focus timer, battery health, quick controls, quick notes and network tools,
+plus a command bar to reach all of it, for Windows 10 and 11.
 Turn on only the parts you want.
 
 **[Download Arrakis for Windows](https://github.com/bhxuk/arrakis/releases/latest/download/Arrakis-Setup.exe)**  ·  [Website](https://bhxuk.github.io/arrakis/)  ·  [User guide](docs/USER-GUIDE.md)  ·  [What's new](CHANGELOG.md)
@@ -20,17 +21,20 @@ Turn on only the parts you want.
 
 ## What's inside
 
-Arrakis is one app with seven modules. Each one has its own switch, so it only does what you ask it to.
+Arrakis is one app with ten modules. Each one has its own switch, so it only does what you ask it to.
 
 | Module | What it does | Shortcut |
 |---|---|---|
 | **Dock** | A floating dock for your apps, with window previews, folder stacks and a dock on every screen. Can replace the taskbar. | Always on |
-| **Widgets** | 15 widgets, from clocks, weather and your calendar to to-dos, stocks, headlines and a photo frame. Saved layouts and meeting alerts. | Ctrl+Alt+W |
+| **Widgets** | 16 widgets, from clocks, weather and your calendar to to-dos, stocks, headlines, a photo frame and ping. Saved layouts and meeting alerts. | Ctrl+Alt+W |
 | **Wallpaper** | Scenes that follow the real sun and the weather outside, your own photos, or Bing's photo of the day. On every screen. | Automatic |
 | **Clipboard** | Everything you copy, searchable. Snippets with shortcodes, paste as UPPERCASE and more, collections, encrypted sync between PCs. | Ctrl+Alt+V |
 | **Capture** | A full screenshot tool: area, window, full screen, all screens or delayed. Edit with 14 tools, effects and frames, then copy, save, print or pin. | Ctrl+Alt+S |
 | **Focus** | A timer pill that silences notifications, keeps distracting apps away, can start from your calendar and gives you a weekly report. | Ctrl+Alt+F |
 | **Battery** | Battery wear, charge history, tips on your charging habits, low-battery alerts, power modes and a report you can print. | Laptops |
+| **Quick controls** | Volume for each app, the output device, brightness for every screen, and Wi-Fi, Bluetooth, dark mode, Night light, Do not disturb and the mic in one panel. | Ctrl+Alt+Q |
+| **Quick notes** | A note pad one shortcut away. Notes save as you type, are searchable, and can be pinned to the desktop as stickies. | Ctrl+Alt+N |
+| **Network** | Speed test, live ping graph, tips for slow Wi-Fi, the devices on your network, and alerts when the internet drops. | Speed test |
 
 And across the whole app: a **command bar** on **Alt+Space**, **light and dark themes** with six accent colours,
 **automatic updates**, and **backup** to move everything to a new PC.
@@ -75,10 +79,11 @@ next to it. Pick from three styles, and hide the Windows taskbar if you want the
 ### Widgets
 
 Drag them anywhere. They stay behind your windows like part of the wallpaper. Right-click for size, style and options,
-or press **Ctrl+Alt+W** to show remove buttons. There are 15 to choose from:
+or press **Ctrl+Alt+W** to show remove buttons. There are 16 to choose from:
 
 clock, weather, calendar, system rings, battery, now playing, notes, countdown, **agenda**, **to-do list**,
-**quick launch**, **world clocks**, **photo frame**, **stocks** and **headlines** from any news feed.
+**quick launch**, **world clocks**, **photo frame**, **stocks**, **headlines** from any news feed and **ping**.
+Quick notes can be pinned to the desktop as stickies too.
 
 - **Your calendar**: paste your calendar's .ics link (Google, Outlook and iCloud all have one). The calendar widget
   marks busy days, the agenda shows what's next, and you get a **heads-up 10 minutes before each meeting**.
@@ -165,6 +170,35 @@ charge levels, and a reminder to unplug at the level you choose.
 
 <img src="docs/images/battery.png" alt="Battery health, tips, the three power modes and the low-battery alert" width="900">
 
+### Quick controls
+
+Press **Ctrl+Alt+Q** (or right-click the Arrakis icon) for one panel with the things you'd normally dig through Settings for.
+
+- **Switches** for Wi-Fi, Bluetooth, Do not disturb, dark mode, Night light and the microphone. Right-click any of them for its Windows settings page.
+- **Brightness** for your laptop screen and for external monitors that support DDC/CI, each with its own slider.
+- **Sound**: master volume, which device to play on (speakers, headphones, TV), and a slider and mute button for **each app** that's making sound.
+- **Power mode**: Battery saver, Balanced or Best performance.
+
+<img src="docs/images/controls.png" alt="The Quick controls panel with switch tiles, brightness for two screens, volume, output device and per-app volume" width="900">
+
+### Quick notes
+
+Press **Ctrl+Alt+N** in any app and a fresh note is ready to type into. Notes save as you type, come in six colours, and can be
+searched in the notes window (**Ctrl+F**) or from the command bar. **Pin to desktop** turns a note into a sticky that you can
+edit right there with a double-click.
+
+<img src="docs/images/notes.png" alt="The Quick notes window with a list of notes and a yellow note open, and two sticky notes pinned on the desktop" width="900">
+
+### Network
+
+- **Speed test**: download, upload, ping and jitter, with a plain-English verdict and your recent results to compare.
+- **Live ping**: a graph of your connection over the last few minutes, with typical ping, jitter and packet loss. There's a **Ping widget** for the desktop too.
+- **What could be slowing things down**: weak signal, 2.4 GHz when 5 GHz is available, a crowded channel, a slow link, a cable stuck at 100 Mbps, high ping or dropped packets.
+- **Devices on your network**: your router, this PC, and every phone, TV, printer and speaker that answers.
+- **Drop alerts**: a notification when the internet goes down, and another when it's back with how long it was out.
+
+<img src="docs/images/network.png" alt="The Network page with Wi-Fi details, a speed test result, a live ping graph, tips and a list of devices" width="900">
+
 > The pictures above are design renders of each screen, made from the same layouts the app uses. Your apps,
 > weather and numbers will be your own.
 
@@ -203,6 +237,8 @@ Everything Arrakis stores stays on your PC. The only things it fetches from the 
 - Bing's photo of the day, only if you choose that wallpaper mode;
 - your calendar, from the .ics link you give it, if you add one;
 - stock prices and news headlines, only if you add those widgets;
+- a speed test with Cloudflare's public speed test servers, only when you run one;
+- your public IP address, only when you click Show on the Network page;
 - a check for a newer version on GitHub, which you can switch off in Settings.
 
 Clipboard sync only writes to the folder you choose, and the file is encrypted with your password first.

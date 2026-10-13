@@ -268,7 +268,7 @@ namespace Arrakis.Modules
                 details.Children.Clear();
                 if (info.Connected)
                 {
-                    if (info.Kind == "Wi-Fi" && info.RxMbps > 0) details.Children.Add(Fact("Link speed", UI.Text(info.RxMbps + " Mbps down, " + info.TxMbps + " up", 14, Theme.Text, FontWeights.SemiBold)));
+                    if (info.Kind == "Wi-Fi" && info.RxMbps > 0) details.Children.Add(Fact("Link speed", UI.Text(info.RxMbps + " / " + info.TxMbps + " Mbps", 14, Theme.Text, FontWeights.SemiBold)));
                     details.Children.Add(Fact("This PC", UI.Text(info.LocalIp, 14, Theme.Text, FontWeights.SemiBold)));
                     details.Children.Add(Fact("Router", UI.Text(info.Gateway, 14, Theme.Text, FontWeights.SemiBold)));
                     details.Children.Add(Fact("DNS", UI.Text(string.IsNullOrEmpty(info.Dns) ? "-" : info.Dns, 14, Theme.Text, FontWeights.SemiBold)));

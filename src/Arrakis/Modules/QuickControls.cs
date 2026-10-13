@@ -222,7 +222,7 @@ namespace Arrakis.Modules
                     muteBtn.Content = UI.GridIcon(m ? Icons.Mute : Icons.Speaker, 18, m ? Theme.Red : Theme.Text);
                 }, 34);
                 muteBtn.Content = UI.GridIcon(Audio.GetMute() ? Icons.Mute : Icons.Speaker, 18, Audio.GetMute() ? Theme.Red : Theme.Text);
-                sound.Children.Add(Row(null, "Volume", slider, pct, muteBtn));
+                sound.Children.Add(Row(Icons.Speaker, "Volume", slider, pct, muteBtn));
             }
 
             var devices = Audio.OutputDevices();

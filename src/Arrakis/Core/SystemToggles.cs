@@ -23,9 +23,24 @@ namespace Arrakis.Core
         private static List<Display> _cache;
 
         /// <summary>Finds screens that support brightness. External monitors are slow to answer, so call this off the UI thread.</summary>
+        private static DateTime _found;
+        private static readonly object Gate = new object();
+
         public static List<Display> Find()
         {
-            Release();
+            lock (Gate)
+            {
+                // Reuse a recent scan so the panel and the settings page share the same monitor handles.
+                if (_cache != null && (DateTime.Now - _found).TotalSeconds < 60) return _cache;
+                Release();
+                _cache = Scan();
+                _found = DateTime.Now;
+                return _cache;
+            }
+        }
+
+        private static List<Display> Scan()
+        {
             var list = new List<Display>();
             // Laptop screen
             try
@@ -62,7 +77,6 @@ namespace Arrakis.Core
                 }
             }
             catch (Exception ex) { Log.Write("Monitor brightness: " + ex.Message); }
-            _cache = list;
             return list;
         }
 

@@ -13,6 +13,9 @@ Everything Arrakis can do, and how to do it. If something isn't covered here,
 - [Capture](#capture)
 - [Focus](#focus)
 - [Battery](#battery)
+- [Quick controls](#quick-controls)
+- [Quick notes](#quick-notes)
+- [Network](#network)
 - [Updates and moving to a new PC](#updates-and-moving-to-a-new-pc)
 - [Shortcuts at a glance](#shortcuts-at-a-glance)
 - [Troubleshooting](#troubleshooting)
@@ -30,7 +33,7 @@ Everything Arrakis can do, and how to do it. If something isn't covered here,
 Arrakis lives in the **notification area** by the clock (you may need to click the **^** arrow to see it).
 
 - **Left-click** the icon to open the hub.
-- **Right-click** it for quick actions: command bar, clipboard, screenshots, focus, edit widgets, show the Windows taskbar, exit.
+- **Right-click** it for quick actions: command bar, quick controls, new note, clipboard, screenshots, focus, edit widgets, speed test, show the Windows taskbar, exit.
 
 Closing the hub window doesn't stop Arrakis; it carries on in the background. To stop it completely,
 right-click the icon and choose **Exit Arrakis**.
@@ -72,6 +75,8 @@ Press **Alt+Space** anywhere and start typing. Use **Up** and **Down** to move, 
 | Words you copied earlier | Matching clipboard items. Enter copies it again |
 | *screenshot*, *focus*, *clipboard*, *widgets* | Arrakis actions, like **Focus for 50 minutes** or **Screenshot a window** |
 | *power* | **Power mode: Battery saver**, **Balanced** or **Best performance** |
+| *controls*, *note*, *speed*, *dark*, *mute* | **Quick controls**, **New note**, **Run a speed test**, dark mode, Do not disturb and mute |
+| Words from one of your notes | That note. Enter opens it |
 | *layout* | Your saved widget layouts |
 | Anything else | **Search the web** for it |
 
@@ -153,6 +158,7 @@ system rings, now playing and a note.
 | Photo frame | Right-click > Choose folder... It shows your Pictures folder to start with and changes every few minutes |
 | Stocks | Right-click > Edit symbols... Prices come from Stooq, so use codes like AAPL.US, VOD.UK or ^UKX |
 | Headlines | Right-click > Change feed... and paste any RSS or Atom news feed. Click a headline to read it |
+| Ping | Your connection's ping right now and over the last couple of minutes. Green is good, amber is slow, red is offline. See [Network](#network) |
 
 **Connect your calendar**: in Arrakis > Widgets, paste your calendar's **.ics link** under *Calendar link*.
 
@@ -383,6 +389,81 @@ For laptops and tablets. On a desktop PC it says there's no battery, but you can
 - **Health report**: **Save a report** makes a one-page web page with health, capacity, cycles and a chart, ready to
   print or save as a PDF. Handy when selling a laptop or making a warranty claim.
 
+## Quick controls
+
+<img src="images/controls.png" width="760" alt="Quick controls">
+
+Press **Ctrl+Alt+Q** anywhere (or right-click the Arrakis icon > **Quick controls**). The panel opens in the bottom-right
+corner and closes when you click away or press **Esc**.
+
+**Switches**: click to turn on or off. Right-click any of them to open that page of Windows Settings.
+
+| Switch | Notes |
+|---|---|
+| Wi-Fi, Bluetooth | Turns the radio on or off, like the switches in Windows' own quick settings |
+| Do not disturb | Stops app notification pop-ups. Focus uses the same switch during sessions |
+| Dark mode | Switches Windows and your apps between dark and light |
+| Night light | Warmer colours for the evening. If Windows on your PC stores this setting differently, clicking opens the Night light settings instead |
+| Microphone | Mutes or unmutes your default microphone for every app |
+
+**Brightness**: a slider for your laptop screen and one for each external monitor that supports DDC/CI (most monitors
+from the last ten years; it may need turning on in the monitor's own menu). TVs and some docks don't pass it through.
+
+**Sound**: the master volume and mute button, **Play sound on** to switch between speakers, headphones, a TV and so on,
+and a slider and mute button for **each app** that's making sound (music, browser, calls). Arrakis doesn't change any
+app's volume unless you move its slider.
+
+**Power mode**: Battery saver, Balanced or Best performance, the same as Windows' own power mode.
+
+In Arrakis > Quick controls you can change the shortcut, and hide the per-app volume or brightness sections.
+
+## Quick notes
+
+<img src="images/notes.png" width="760" alt="Quick notes">
+
+Press **Ctrl+Alt+N** in any app. The notes window opens with a fresh note ready to type into. Everything saves as you type.
+
+- **Find a note**: type in **Search notes** (or press **Ctrl+F**). You can also type part of a note in the command bar.
+- **New note**: the **New note** button, or **Ctrl+N** in the notes window.
+- **Colour**: pick one of the six dots under the note.
+- **Pin to desktop**: puts the note on your desktop as a sticky. **Double-click** the sticky to edit it there; changes
+  go straight back into the note. Right-click the sticky > **Open in Quick notes** to open it in the window.
+- **Copy** puts the whole note on the clipboard. **Delete** removes it (and its sticky).
+- **Esc** closes the window. Empty notes are tidied away when you close it.
+
+Notes are kept in `notes.json` in the Arrakis settings folder, only on this PC, and they're included when you export a backup.
+
+## Network
+
+<img src="images/network.png" width="760" alt="Network">
+
+**Your connection**: the Wi-Fi network you're on, signal strength, band (2.4 or 5 GHz), Wi-Fi standard and channel,
+link speed to the router, this PC's address, the router's address and DNS. Click **Show** next to Public IP to look it up.
+On a cable it shows the link speed instead.
+
+**Speed test**: click **Run speed test**. It measures ping and jitter, then download and upload, using Cloudflare's
+public speed test servers. It takes about 20 seconds and can use a few hundred MB on a fast connection, so be careful
+on a mobile hotspot. Your last results are listed underneath, with the network you were on. You can also start one
+from the command bar or the tray menu.
+
+**Live ping**: Arrakis pings 1.1.1.1 every 3 seconds while the Network module is on and draws the last few minutes.
+Red dots are pings that got no reply. Underneath you'll see typical ping, jitter (how much it jumps around) and how
+many were lost. Add the **Ping widget** in Arrakis > Widgets to keep an eye on it from the desktop.
+
+**What could be slowing things down**: checks your signal, whether you're on 2.4 GHz when 5 GHz is available, how many
+other networks share your channel, your link speed, whether a cable is stuck at 100 Mbps, and your ping, jitter and
+packet loss, then says what to try.
+
+**Devices on your network**: click **Scan my network**. Arrakis tries every address on your home network and lists
+what answers, with its name where it has one. Phones often use a *private address* that changes, so they show as
+"Phone or tablet". Devices that are asleep may not show up.
+
+**Drop alerts**: with **Tell me when the internet drops** on, you get a notification when the connection stops answering
+for about 10 seconds, and another when it's back saying how long it was out.
+
+**Ping** in settings changes the address used for the live ping and drop alerts. Use your router's address (shown at
+the top) to test just your Wi-Fi, or keep 1.1.1.1 to test the whole connection.
+
 ## Updates and moving to a new PC
 
 **Updates**: Arrakis checks GitHub for a newer version when it starts. With **Install updates automatically** on
@@ -403,6 +484,8 @@ PC and click **Import...**. Arrakis restarts with everything in place.
 | Shortcut | Does |
 |---|---|
 | Alt+Space | Open the command bar |
+| Ctrl+Alt+Q | Open quick controls |
+| Ctrl+Alt+N | New note |
 | Ctrl+Alt+V | Open the clipboard |
 | Ctrl+Alt+S | Screenshot of an area |
 | Ctrl+Alt+D | Screenshot of a window |
@@ -410,7 +493,7 @@ PC and click **Import...**. Arrakis restarts with everything in place.
 | Ctrl+Alt+F | Start, pause or resume focus |
 | Ctrl+Alt+W | Show or hide widget remove buttons |
 
-You can change the command bar, clipboard and screenshot shortcuts in their settings pages. If a shortcut doesn't work,
+You can change the command bar, clipboard, screenshot, quick controls and notes shortcuts in their settings pages. If a shortcut doesn't work,
 another app is probably using it; Arrakis will tell you and you can pick a different one.
 
 ## Troubleshooting
@@ -437,6 +520,12 @@ Both PCs need the same folder and the same password. The sync status under Arrak
 
 **The weather says "Set your city".**
 Arrakis > Widgets > Weather city. Type a town and click **Set city**.
+
+**A brightness slider is missing for my monitor.**
+The monitor needs DDC/CI, which is sometimes switched off in the monitor's own on-screen menu. Some docks and TVs don't pass it through.
+
+**The speed test is slower than my broadband package.**
+Try it on a cable, or near the router. Wi-Fi, other devices downloading, and VPNs all cut the result. The tips on the Network page usually say which.
 
 **Something else.**
 Open Arrakis > Settings > **Open settings folder** and find `arrakis.log`. Attach it to an
