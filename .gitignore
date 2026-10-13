@@ -4,3 +4,4 @@ obj/
 .vs/
 App/
 dist/
+.claude/
