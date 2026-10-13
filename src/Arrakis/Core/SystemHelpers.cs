@@ -36,112 +36,129 @@ namespace Arrakis.Core
     {
         public IntPtr Monitor;
         public string Edge;        // Bottom, Left, Right
-        public int ReservePx;      // 0 = windows may go under the dock
+        public int ReservePx;      // kept for compatibility; space is now reserved by the dock itself as an app bar
     }
 
     /// <summary>
-    /// Hides and restores the Windows taskbar, and manages each screen's work area (the space maximised windows use).
-    /// Windows only frees the taskbar's space on the main screen by itself, so every screen is handled separately here.
-    /// The taskbar is only hidden on screens that have a dock, so no screen is ever left without one.
+    /// Hides and restores the Windows taskbar.
+    ///
+    /// How it works, and why: Arrakis switches on Windows' own "Automatically hide the taskbar" setting, once.
+    /// Windows then frees the taskbar's space on every screen by itself, so nothing here ever changes a screen's
+    /// work area or broadcasts settings changes (doing that on a timer fights Explorer and can freeze the PC).
+    /// On screens with a dock the taskbar is also hidden outright; on other screens it just auto-hides, so it's
+    /// still there when you push the mouse to the edge. Your original setting is saved and put back on exit.
     /// </summary>
     public static class TaskbarManager
     {
-        private static readonly Dictionary<IntPtr, Native.RECT> Original = new Dictionary<IntPtr, Native.RECT>();
         private static readonly HashSet<IntPtr> HiddenTrays = new HashSet<IntPtr>();
         private static List<DockScreen> _docks = new List<DockScreen>();
         private static bool _hide;
         private static bool _hidden;
+        private static readonly Queue<DateTime> Rehides = new Queue<DateTime>();
+        private static bool _gaveUp;
+
+        /// <summary>Raised once if Windows keeps bringing the taskbar back, and Arrakis stops trying.</summary>
+        public static event Action GaveUp;
 
         public static bool IsHidden => _hidden;
 
         public static bool IsHiddenOn(IntPtr monitor) => _hidden && _docks.Exists(d => d.Monitor == monitor);
 
-        /// <summary>The area a dock should sit in on this screen: the whole screen if its taskbar is hidden,
-        /// otherwise the space next to the taskbar. Never includes space the dock itself reserved.</summary>
+        /// <summary>The area a dock should sit in on this screen.</summary>
         public static Native.RECT BaseArea(IntPtr monitor)
         {
             var mi = Info(monitor);
-            if (IsHiddenOn(monitor)) return mi.rcMonitor;
-            return Original.TryGetValue(monitor, out var r) ? r : mi.rcWork;
+            return IsHiddenOn(monitor) ? mi.rcMonitor : mi.rcWork;
         }
 
-        /// <summary>Applies the taskbar and work-area settings for these docks. Safe to call often.</summary>
         public static void Apply(List<DockScreen> docks, bool hideTaskbar)
         {
             _docks = docks ?? new List<DockScreen>();
             _hide = hideTaskbar;
             try
             {
-                // 1. Taskbars: hide the ones on docked screens, show the rest.
-                foreach (var h in TaskbarWindows())
+                if (_hide)
                 {
-                    var mon = Native.MonitorFromWindow(h, Native.MONITOR_DEFAULTTONEAREST);
-                    bool shouldHide = _hide && _docks.Exists(d => d.Monitor == mon);
-                    if (shouldHide)
+                    var st = Settings.Current.Dock;
+                    if (st.TaskbarAutoHideBefore < 0)
                     {
-                        if (!Original.ContainsKey(mon)) Original[mon] = Info(mon).rcWork;
-                        if (Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_HIDE);
-                        HiddenTrays.Add(h);
+                        st.TaskbarAutoHideBefore = AutoHide ? 1 : 0;
+                        Settings.Save();
                     }
-                    else if (HiddenTrays.Contains(h))
-                    {
-                        Native.ShowWindow(h, Native.SW_SHOW);
-                        HiddenTrays.Remove(h);
-                    }
+                    if (!AutoHide) AutoHide = true;
+                    _gaveUp = false;
+                    Rehides.Clear();
+                    SyncTrays();
+                    _hidden = true;
                 }
-                _hidden = _hide && HiddenTrays.Count > 0;
-
-                // 2. Work areas, screen by screen.
-                foreach (var mon in Monitors())
+                else
                 {
-                    var mi = Info(mon);
-                    var dock = _docks.Find(d => d.Monitor == mon);
-                    bool docked = dock.Monitor == mon && mon != IntPtr.Zero;
-                    bool hiddenHere = _hide && docked;
-                    bool reserve = docked && dock.ReservePx > 0;
-                    if (!hiddenHere && !reserve)
-                    {
-                        // Nothing to change here: put back what Windows had, if we changed it.
-                        if (Original.TryGetValue(mon, out var orig))
-                        {
-                            if (!Same(mi.rcWork, orig)) SetWork(orig);
-                            Original.Remove(mon);
-                        }
-                        continue;
-                    }
-                    if (!Original.ContainsKey(mon)) Original[mon] = mi.rcWork;
-                    var want = hiddenHere ? mi.rcMonitor : Original[mon];
-                    if (reserve)
-                    {
-                        switch (dock.Edge)
-                        {
-                            case "Left": want.Left += dock.ReservePx; break;
-                            case "Right": want.Right -= dock.ReservePx; break;
-                            default: want.Bottom -= dock.ReservePx; break;
-                        }
-                    }
-                    if (!Same(mi.rcWork, want)) SetWork(want);
+                    // Not hiding: make sure every taskbar is showing (this also cleans up after a crash) and
+                    // put the auto-hide setting back if Arrakis changed it.
+                    Restore();
                 }
             }
             catch (Exception ex) { Log.Write("Taskbar apply failed: " + ex.Message); }
         }
 
-        /// <summary>Called on a timer: Explorer sometimes shows the taskbar or resets work areas (for example after it restarts).</summary>
-        public static void Enforce()
+        /// <summary>Hides taskbars on docked screens and shows the others. Returns how many it had to hide.</summary>
+        private static int SyncTrays()
         {
-            if (_docks.Count == 0) return;
-            Apply(_docks, _hide);
+            int hid = 0;
+            foreach (var h in TaskbarWindows())
+            {
+                var mon = Native.MonitorFromWindow(h, Native.MONITOR_DEFAULTTONEAREST);
+                bool docked = _docks.Exists(d => d.Monitor == mon);
+                if (docked)
+                {
+                    if (Native.IsWindowVisible(h)) { Native.ShowWindow(h, Native.SW_HIDE); hid++; }
+                    HiddenTrays.Add(h);
+                }
+                else if (HiddenTrays.Remove(h) && !Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_SHOW);
+            }
+            return hid;
         }
 
-        /// <summary>Puts every taskbar and work area back the way Windows had them.</summary>
+        /// <summary>Called every few seconds. If Explorer has brought a taskbar back (for example after it restarted),
+        /// hide it again, but give up if that keeps happening, rather than fight Windows.</summary>
+        public static void Enforce()
+        {
+            if (!_hide || _gaveUp) return;
+            try
+            {
+                int hid = SyncTrays();
+                if (hid == 0) return;
+                var now = DateTime.Now;
+                Rehides.Enqueue(now);
+                while (Rehides.Count > 0 && (now - Rehides.Peek()).TotalSeconds > 60) Rehides.Dequeue();
+                if (Rehides.Count >= 5)
+                {
+                    _gaveUp = true;
+                    Log.Write("Windows keeps showing the taskbar again; Arrakis has stopped hiding it until next start.");
+                    foreach (var h in TaskbarWindows()) if (!Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_SHOW);
+                    HiddenTrays.Clear();
+                    _hidden = false;
+                    GaveUp?.Invoke();
+                }
+            }
+            catch (Exception ex) { Log.Write("Taskbar check failed: " + ex.Message); }
+        }
+
+        /// <summary>Shows every taskbar and puts "Automatically hide the taskbar" back how it was.</summary>
         public static void Restore()
         {
             try
             {
                 foreach (var h in TaskbarWindows()) if (!Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_SHOW);
                 HiddenTrays.Clear();
-                foreach (var kv in Original) SetWork(kv.Value);
-                Original.Clear();
+                var st = Settings.Current.Dock;
+                if (st.TaskbarAutoHideBefore >= 0)
+                {
+                    bool was = st.TaskbarAutoHideBefore == 1;
+                    if (AutoHide != was) AutoHide = was;
+                    st.TaskbarAutoHideBefore = -1;
+                    Settings.Save();
+                }
                 _docks = new List<DockScreen>();
                 _hidden = false;
                 _hide = false;
@@ -149,33 +166,56 @@ namespace Arrakis.Core
             catch (Exception ex) { Log.Write("Restore taskbar failed: " + ex.Message); }
         }
 
-        /// <summary>Used by the "Restore Windows taskbar" shortcut. Works even if Arrakis crashed, on every screen.</summary>
+        /// <summary>Used by Start > Arrakis > Restore Windows taskbar. Works even if Arrakis isn't running.</summary>
         public static void EmergencyRestore()
         {
+            try { Settings.Load(); } catch { }
             var trays = TaskbarWindows();
             foreach (var h in trays) Native.ShowWindow(h, Native.SW_SHOW);
-            foreach (var mon in Monitors())
+            var st = Settings.Current.Dock;
+            bool wantAutoHide = st.TaskbarAutoHideBefore == 1;
+            // Toggling the setting makes Explorer recalculate every screen's space from scratch,
+            // which also clears anything left over from older versions of Arrakis.
+            AutoHide = !wantAutoHide;
+            System.Threading.Thread.Sleep(300);
+            AutoHide = wantAutoHide;
+            st.TaskbarAutoHideBefore = -1;
+            st.HideTaskbar = false;
+            try { Settings.Save(); } catch { }
+        }
+
+        // ---------- Windows' "Automatically hide the taskbar" ----------
+        [StructLayout(LayoutKind.Sequential)]
+        public struct APPBARDATA
+        {
+            public uint cbSize;
+            public IntPtr hWnd;
+            public uint uCallbackMessage;
+            public uint uEdge;
+            public Native.RECT rc;
+            public IntPtr lParam;
+        }
+
+        [DllImport("shell32.dll")]
+        public static extern UIntPtr SHAppBarMessage(uint msg, ref APPBARDATA data);
+
+        private const uint ABM_GETSTATE = 4, ABM_SETSTATE = 10;
+
+        public static bool AutoHide
+        {
+            get
             {
-                var mi = Info(mon);
-                var work = mi.rcMonitor;
-                foreach (var h in trays)
-                {
-                    if (Native.MonitorFromWindow(h, Native.MONITOR_DEFAULTTONEAREST) != mon) continue;
-                    if (!Native.GetWindowRect(h, out var t)) continue;
-                    if (t.Width >= t.Height && t.Top > work.Top) work.Bottom = Math.Min(work.Bottom, t.Top);
-                    else if (t.Width >= t.Height) work.Top = Math.Max(work.Top, t.Bottom);
-                    else if (t.Left > work.Left) work.Right = Math.Min(work.Right, t.Left);
-                    else work.Left = Math.Max(work.Left, t.Right);
-                }
-                SetWork(work);
+                var d = new APPBARDATA { cbSize = (uint)Marshal.SizeOf<APPBARDATA>(), hWnd = Native.FindWindow("Shell_TrayWnd", null) };
+                return ((ulong)SHAppBarMessage(ABM_GETSTATE, ref d) & 1) != 0;
+            }
+            set
+            {
+                var d = new APPBARDATA { cbSize = (uint)Marshal.SizeOf<APPBARDATA>(), hWnd = Native.FindWindow("Shell_TrayWnd", null), lParam = new IntPtr(value ? 1 : 2) };
+                SHAppBarMessage(ABM_SETSTATE, ref d);
             }
         }
 
         // ---------- helpers ----------
-        private static bool Same(Native.RECT a, Native.RECT b) => a.Left == b.Left && a.Top == b.Top && a.Right == b.Right && a.Bottom == b.Bottom;
-
-        private static void SetWork(Native.RECT r) => Native.SystemParametersInfo(Native.SPI_SETWORKAREA, 0, ref r, Native.SPIF_SENDCHANGE);
-
         private static Native.MONITORINFO Info(IntPtr mon)
         {
             var mi = new Native.MONITORINFO { cbSize = Marshal.SizeOf(typeof(Native.MONITORINFO)) };

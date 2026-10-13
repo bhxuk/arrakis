@@ -34,28 +34,47 @@ namespace Arrakis.Modules
             OpenWindows();
             ApplyTaskbar();
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaysChanged;
+            TaskbarManager.GaveUp += OnGaveUp;
+        }
+
+        private void OnGaveUp()
+        {
+            App.Instance.Tray.Notify("Taskbar left showing", "Windows kept bringing the taskbar back, so Arrakis stopped hiding it for now. It'll try again next time Arrakis starts.");
         }
 
         protected override void OnStop()
         {
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaysChanged;
+            TaskbarManager.GaveUp -= OnGaveUp;
+            _displayTimer?.Stop();
             _taskbarTimer?.Stop();
             TaskbarManager.Restore();
             CloseWindows();
         }
 
+        private DispatcherTimer _displayTimer;
+
+        /// <summary>Screens were added, removed or resized. Waits until things settle, then rebuilds the docks once.
+        /// The taskbar is left as it is (showing and re-hiding it here is what made it flicker).</summary>
         private void OnDisplaysChanged(object sender, EventArgs e)
         {
-            Application.Current.Dispatcher.BeginInvoke(new Action(async () =>
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (!IsRunning) return;
-                // Screens were added, removed or resized: start from what Windows has, then apply again.
-                TaskbarManager.Restore();
-                CloseWindows();
-                await Task.Delay(800);
-                if (!IsRunning) return;
-                OpenWindows();
-                ApplyTaskbar();
+                if (_displayTimer == null)
+                {
+                    _displayTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+                    _displayTimer.Tick += (s, ev) =>
+                    {
+                        _displayTimer.Stop();
+                        if (!IsRunning) return;
+                        CloseWindows();
+                        OpenWindows();
+                        ApplyTaskbar();
+                    };
+                }
+                _displayTimer.Stop();
+                _displayTimer.Start();
             }));
         }
 
@@ -81,16 +100,15 @@ namespace Arrakis.Modules
         {
             _taskbarTimer?.Stop();
             if (!IsRunning) { TaskbarManager.Restore(); return; }
-            var screens = _windows.Select(w => new DockScreen { Monitor = w.Monitor, Edge = D.Position, ReservePx = D.ReserveSpace ? w.ReservePx : 0 }).ToList();
-            if (D.HideTaskbar || D.ReserveSpace)
+            var screens = _windows.Select(w => new DockScreen { Monitor = w.Monitor, Edge = D.Position }).ToList();
+            TaskbarManager.Apply(screens, D.HideTaskbar);
+            if (D.HideTaskbar)
             {
-                TaskbarManager.Apply(screens, D.HideTaskbar);
-                _taskbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                _taskbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
                 _taskbarTimer.Tick += (s, e) => TaskbarManager.Enforce();
                 _taskbarTimer.Start();
             }
-            else TaskbarManager.Restore();
-            foreach (var w in _windows) w.Reposition();
+            foreach (var w in _windows) { w.SetAppBar(D.ReserveSpace); w.Reposition(); }
         }
 
         /// <summary>Brings the Windows taskbar back on every screen and turns off "Hide the Windows taskbar".</summary>
@@ -98,8 +116,7 @@ namespace Arrakis.Modules
         {
             D.HideTaskbar = false;
             Settings.Save();
-            if (IsRunning) ApplyTaskbar(); else TaskbarManager.Restore();
-            if (!IsRunning || !D.ReserveSpace) TaskbarManager.EmergencyRestore();
+            if (IsRunning) ApplyTaskbar(); else TaskbarManager.EmergencyRestore();
             foreach (var w in _windows) w.Reposition();
         }
 
@@ -308,9 +325,9 @@ namespace Arrakis.Modules
                     UI.SettingRow("Get out of the way", "Slide the dock away when a window is maximised. Move the mouse to the edge of the screen to bring it back.", autohide)), 20),
                 UI.Label("Taskbar and screens"),
                 UI.Card(UI.V(4,
-                    UI.SettingRow("Hide the Windows taskbar", "Use the dock instead. It's hidden only on screens that have a dock, and comes back whenever Arrakis closes.", taskbar),
+                    UI.SettingRow("Hide the Windows taskbar", "Use the dock instead. It's hidden on screens with a dock, and set to auto-hide on the others (push the mouse to the edge to see it). It comes back whenever Arrakis closes.", taskbar),
                     UI.SettingRow("Put the taskbar back", "Shows the Windows taskbar again on every screen, straight away.", putBack),
-                    UI.SettingRow("A dock on every screen", "Each screen gets its own dock with the windows that are on it. With the taskbar hidden, it's hidden on those screens too.", monitors),
+                    UI.SettingRow("A dock on every screen", "Each screen gets its own dock with the windows that are on it. Turn this on to hide the taskbar completely on every screen.", monitors),
                     UI.SettingRow("Keep windows clear of the dock", "Maximised windows stop at the dock instead of going underneath it.", reserve)), 8),
                 UI.Label("Features"),
                 UI.Card(UI.V(4,
@@ -420,6 +437,15 @@ namespace Arrakis.Modules
         private TimeSpan _lastFrame;
         private bool _scanning;
 
+        // App bar: with "Keep windows clear of the dock", Windows itself reserves the dock's space on its screen.
+        private bool _appBar;
+        private uint _appBarMsg;
+        private Native.RECT _appBarRect;
+        private DispatcherTimer _appBarTimer;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern uint RegisterWindowMessage(string name);
+
         public IntPtr Monitor { get; private set; }
         public int ReservePx => (int)Math.Round(BarThickness * _scale);
 
@@ -472,7 +498,13 @@ namespace Arrakis.Modules
 
             ComputeMonitor();
 
-            SourceInitialized += (s, e) => { WindowHelper.MakeToolWindow(this, true); Reposition(); };
+            SourceInitialized += (s, e) =>
+            {
+                WindowHelper.MakeToolWindow(this, true);
+                HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(WndProc);
+                if (S.ReserveSpace) SetAppBar(true);
+                Reposition();
+            };
             Loaded += (s, e) => ApplyStyle();
 
             MediaService.Instance.Changed += RebuildLive;
@@ -485,6 +517,8 @@ namespace Arrakis.Modules
             _edgePoll.Tick += (s, e) => { if (_hidden && IsMouseAtEdge()) SetHidden(false); };
             Closed += (s, e) =>
             {
+                SetAppBar(false);
+                _appBarTimer?.Stop();
                 _timer.Stop();
                 _edgePoll.Stop();
                 StopRendering();
@@ -503,11 +537,90 @@ namespace Arrakis.Modules
             try { if (GetDpiForMonitor(Monitor, 0, out uint dx, out _) == 0) _scale = dx / 96.0; } catch { }
         }
 
+        // ---------------------------------------------------------------- app bar
+        public void SetAppBar(bool on)
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (hwnd == IntPtr.Zero) return;
+            try
+            {
+                var d = new TaskbarManager.APPBARDATA { cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<TaskbarManager.APPBARDATA>(), hWnd = hwnd };
+                if (on && !_appBar)
+                {
+                    if (_appBarMsg == 0) _appBarMsg = RegisterWindowMessage("ArrakisDockAppBar");
+                    d.uCallbackMessage = _appBarMsg;
+                    TaskbarManager.SHAppBarMessage(0 /* ABM_NEW */, ref d);
+                    _appBar = true;
+                }
+                else if (!on && _appBar)
+                {
+                    TaskbarManager.SHAppBarMessage(1 /* ABM_REMOVE */, ref d);
+                    _appBar = false;
+                }
+                if (_appBar) PlaceAppBar(false);
+            }
+            catch (Exception ex) { Log.Write("Dock app bar: " + ex.Message); }
+        }
+
+        /// <summary>Tells Windows how much space to keep for the dock. Only acts when something actually changed.</summary>
+        private void PlaceAppBar(bool onlyIfChanged)
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (!_appBar || hwnd == IntPtr.Zero) return;
+            ComputeMonitor();
+            int px = ReservePx;
+            var d = new TaskbarManager.APPBARDATA { cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<TaskbarManager.APPBARDATA>(), hWnd = hwnd };
+            d.uEdge = S.Position == "Left" ? 0u : S.Position == "Right" ? 2u : 3u;
+            d.rc = _full;
+            void Fit()
+            {
+                switch (S.Position)
+                {
+                    case "Left": d.rc.Right = d.rc.Left + px; break;
+                    case "Right": d.rc.Left = d.rc.Right - px; break;
+                    default: d.rc.Top = d.rc.Bottom - px; break;
+                }
+            }
+            Fit();
+            TaskbarManager.SHAppBarMessage(2 /* ABM_QUERYPOS */, ref d);
+            Fit();
+            if (onlyIfChanged && d.rc.Left == _appBarRect.Left && d.rc.Top == _appBarRect.Top && d.rc.Right == _appBarRect.Right && d.rc.Bottom == _appBarRect.Bottom) return;
+            TaskbarManager.SHAppBarMessage(3 /* ABM_SETPOS */, ref d);
+            _appBarRect = d.rc;
+            Reposition();
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (_appBar && _appBarMsg != 0 && msg == (int)_appBarMsg && wParam.ToInt32() == 1 /* ABN_POSCHANGED */)
+            {
+                // Another bar moved. Re-check once things settle, rather than reacting to every message.
+                if (_appBarTimer == null)
+                {
+                    _appBarTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+                    _appBarTimer.Tick += (s, e) => { _appBarTimer.Stop(); PlaceAppBar(true); };
+                }
+                _appBarTimer.Stop();
+                _appBarTimer.Start();
+            }
+            return IntPtr.Zero;
+        }
+
         // ---------------------------------------------------------------- placement
         public void Reposition()
         {
             ComputeMonitor();
             var area = TaskbarManager.BaseArea(Monitor);
+            if (_appBar && _appBarRect.Right > _appBarRect.Left)
+            {
+                // Our own reserved space isn't part of the work area, so sit inside it.
+                switch (S.Position)
+                {
+                    case "Left": area.Left = _appBarRect.Left; break;
+                    case "Right": area.Right = _appBarRect.Right; break;
+                    default: area.Bottom = _appBarRect.Bottom; break;
+                }
+            }
             double thickness = BarThickness + Headroom;
             double monLen = Vertical ? _full.Height / _scale : _full.Width / _scale;
             double length = monLen;

@@ -29,6 +29,7 @@ namespace Arrakis.Core
         public bool Animations { get; set; } = true;
         public bool ShowDivider { get; set; } = true;
         public bool ReserveSpace { get; set; } = false;
+        public int TaskbarAutoHideBefore { get; set; } = -1;  // the Windows setting before Arrakis changed it: -1 unknown, 0 off, 1 on
     }
 
     public class WidgetInstance
