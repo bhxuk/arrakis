@@ -431,6 +431,24 @@ namespace Arrakis.Core
             yield return new CommandItem { Title = "Screenshot a window", Subtitle = "Arrakis · Capture", Kind = "Action", Icon = Icons.Capture, Run = () => DelayRun(() => app.Capture.Capture(Arrakis.Modules.CaptureMode.Window)) };
             yield return new CommandItem { Title = "Open the clipboard", Subtitle = "Arrakis · Clipboard", Kind = "Action", Icon = Icons.Clipboard, Run = () => DelayRun(() => app.Clipboard.ShowPanel()) };
             yield return new CommandItem { Title = app.Focus.IsActive ? "Pause or resume focus" : "Start focus", Subtitle = "Arrakis · Focus", Kind = "Action", Icon = Icons.Focus, Run = () => app.Focus.ToggleFromHotkey() };
+            if (app.Focus.IsRunning && app.Focus.Current == Arrakis.Modules.FocusModule.Phase.Idle)
+                foreach (int mins in new[] { 25, 50, 90 })
+                {
+                    int m = mins;
+                    yield return new CommandItem { Title = "Focus for " + m + " minutes", Subtitle = "Arrakis · Focus", Kind = "Action", Icon = Icons.Focus, Run = () => app.Focus.StartFocus(null, m) };
+                }
+            for (int i = 0; i < Arrakis.Modules.PowerModes.Modes.Length; i++)
+            {
+                int index = i;
+                var mode = Arrakis.Modules.PowerModes.Modes[i];
+                yield return new CommandItem { Title = "Power mode: " + mode.name, Subtitle = "Windows · " + mode.desc, Kind = "Action", Icon = mode.icon, Run = () => Arrakis.Modules.PowerModes.Set(index) };
+            }
+            if (app.Widgets.IsRunning)
+                foreach (var name in Settings.Current.Widgets.Layouts.Keys.ToList())
+                {
+                    string n = name;
+                    yield return new CommandItem { Title = "Widget layout: " + n, Subtitle = "Arrakis · Widgets", Kind = "Action", Icon = Icons.Widgets, Run = () => app.Widgets.LoadLayout(n) };
+                }
             yield return new CommandItem { Title = "Edit widgets", Subtitle = "Arrakis · Widgets", Kind = "Action", Icon = Icons.Widgets, Run = () => app.Widgets.ToggleEditMode() };
             yield return new CommandItem { Title = "Open Arrakis", Subtitle = "Arrakis", Kind = "Action", Icon = Icons.Home, Run = () => app.ShowHub() };
             foreach (var m in app.Modules)
