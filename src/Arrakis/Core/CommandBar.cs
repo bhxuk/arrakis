@@ -428,7 +428,7 @@ namespace Arrakis.Core
         {
             var app = App.Instance;
             yield return new CommandItem { Title = "Take a screenshot", Subtitle = "Arrakis · Capture", Kind = "Action", Icon = Icons.Capture, Run = () => DelayRun(() => app.Capture.StartCapture()) };
-            yield return new CommandItem { Title = "Screenshot a window", Subtitle = "Arrakis · Capture", Kind = "Action", Icon = Icons.Capture, Run = () => DelayRun(() => app.Capture.Capture(CaptureMode.Window)) };
+            yield return new CommandItem { Title = "Screenshot a window", Subtitle = "Arrakis · Capture", Kind = "Action", Icon = Icons.Capture, Run = () => DelayRun(() => app.Capture.Capture(Arrakis.Modules.CaptureMode.Window)) };
             yield return new CommandItem { Title = "Open the clipboard", Subtitle = "Arrakis · Clipboard", Kind = "Action", Icon = Icons.Clipboard, Run = () => DelayRun(() => app.Clipboard.ShowPanel()) };
             yield return new CommandItem { Title = app.Focus.IsActive ? "Pause or resume focus" : "Start focus", Subtitle = "Arrakis · Focus", Kind = "Action", Icon = Icons.Focus, Run = () => app.Focus.ToggleFromHotkey() };
             yield return new CommandItem { Title = "Edit widgets", Subtitle = "Arrakis · Widgets", Kind = "Action", Icon = Icons.Widgets, Run = () => app.Widgets.ToggleEditMode() };
