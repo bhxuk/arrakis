@@ -420,7 +420,7 @@ namespace Arrakis
                     UI.SettingRow("Update now", null, UI.V(4, updBtn, updStatus))), 8),
                 UI.Label("Backup"),
                 UI.Card(UI.V(0,
-                    UI.SettingRow("Move to a new PC", "Export everything (settings, widgets, clipboard, snippets, focus and battery history) into one file, then import it on the other PC.", UI.H(8, exportBtn, importBtn))), 8),
+                    UI.SettingRow("Move to a new PC", "Export everything (settings, widgets, clipboard, snippets, notes, speed tests, focus and battery history) into one file, then import it on the other PC.", UI.H(8, exportBtn, importBtn))), 8),
                 UI.Label("Help"),
                 UI.Card(UI.V(0,
                     UI.SettingRow("Taskbar gone and won't come back?", "This brings it straight back. You can also run Start > Arrakis > Restore Windows taskbar.", taskbar),

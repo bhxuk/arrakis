@@ -150,6 +150,27 @@ namespace Arrakis.Core
         public int LowPercent { get; set; } = 20;
     }
 
+    public class ControlsSettings
+    {
+        public bool Enabled { get; set; } = true;
+        public string Hotkey { get; set; } = "Ctrl+Alt+Q";
+        public bool ShowAppVolumes { get; set; } = true;
+        public bool ShowBrightness { get; set; } = true;
+    }
+
+    public class NotesSettings
+    {
+        public bool Enabled { get; set; } = true;
+        public string Hotkey { get; set; } = "Ctrl+Alt+N";
+    }
+
+    public class NetworkSettings
+    {
+        public bool Enabled { get; set; } = true;
+        public string PingHost { get; set; } = "1.1.1.1";
+        public bool DropAlerts { get; set; } = true;
+    }
+
     public class AppSettings
     {
         public int Version { get; set; } = 1;
@@ -169,6 +190,9 @@ namespace Arrakis.Core
         public CaptureSettings Capture { get; set; } = new CaptureSettings();
         public FocusSettings Focus { get; set; } = new FocusSettings();
         public BatterySettings Battery { get; set; } = new BatterySettings();
+        public ControlsSettings Controls { get; set; } = new ControlsSettings();
+        public NotesSettings Notes { get; set; } = new NotesSettings();
+        public NetworkSettings Network { get; set; } = new NetworkSettings();
     }
 
     /// <summary>Loads and saves settings to %AppData%\Arrakis\settings.json.</summary>

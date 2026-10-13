@@ -22,6 +22,8 @@ namespace Arrakis.Core
             menu.Items.Add("Open Arrakis", null, (s, e) => App.Instance.ShowHub());
             menu.Items.Add("Command bar", null, (s, e) => CommandBar.Toggle());
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+            menu.Items.Add("Quick controls", null, (s, e) => App.Instance.Controls.Toggle());
+            menu.Items.Add("New note", null, (s, e) => App.Instance.Notes.Open(null, true));
             menu.Items.Add("Clipboard", null, (s, e) => App.Instance.Clipboard.ShowPanel());
             var shot = new System.Windows.Forms.ToolStripMenuItem("Screenshot");
             shot.DropDownItems.Add("Area", null, (s, e) => App.Instance.Capture.StartCapture());
@@ -33,6 +35,7 @@ namespace Arrakis.Core
             menu.Items.Add(shot);
             menu.Items.Add("Start or pause focus", null, (s, e) => App.Instance.Focus.ToggleFromHotkey());
             menu.Items.Add("Edit widgets", null, (s, e) => App.Instance.Widgets.ToggleEditMode());
+            menu.Items.Add("Run a speed test", null, (s, e) => App.Instance.Network.RunSpeedTestFromAnywhere());
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menu.Items.Add("Show Windows taskbar", null, (s, e) =>
             {

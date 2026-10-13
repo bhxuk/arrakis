@@ -38,7 +38,8 @@ namespace Arrakis.Modules
             ("WorldClock", "World clocks", "Medium", Icons.Clock),
             ("Photo", "Photo frame", "Medium", Icons.Wallpaper),
             ("Stocks", "Stocks", "Medium", "M4 19h16M6 15l4-4 3 3 5-6M14 8h4v4"),
-            ("News", "Headlines", "Medium", Icons.Lines)
+            ("News", "Headlines", "Medium", Icons.Lines),
+            ("Ping", "Ping", "Small", Icons.Wifi)
         };
 
         private readonly List<WidgetWindow> _windows = new List<WidgetWindow>();
@@ -156,6 +157,17 @@ namespace Arrakis.Modules
             "Battery" => 110,
             _ => 130
         };
+
+        /// <summary>Pins a Quick note to the desktop as a sticky.</summary>
+        public void AddNote(string noteId)
+        {
+            var item = new WidgetInstance { Kind = "QuickNote", Source = noteId };
+            S.Items.Add(item);
+            Settings.Save();
+            if (!IsRunning) App.Instance.SetModuleEnabled(this, true);
+            else Open(item);
+            ListChanged?.Invoke();
+        }
 
         public void Add(string kind)
         {
@@ -559,6 +571,8 @@ namespace Arrakis.Modules
                 "Photo" => PhotoBody(),
                 "Stocks" => StocksBody(),
                 "News" => NewsBody(),
+                "QuickNote" => QuickNoteBody(),
+                "Ping" => PingBody(),
                 _ => UI.Text("Unknown widget")
             };
             if (_module.EditMode)
@@ -592,9 +606,9 @@ namespace Arrakis.Modules
         {
             _frame.CornerRadius = new CornerRadius(22);
             _frame.BorderThickness = new Thickness(1);
-            if (Item.Kind == "Notes")
+            if (Item.Kind == "Notes" || Item.Kind == "QuickNote")
             {
-                _frame.Background = Theme.Brush("#FFE7A8");
+                _frame.Background = Theme.Brush(Item.Kind == "QuickNote" ? NoteStore.Hex(NoteStore.Find(Item.Source)?.Colour) : "#FFE7A8");
                 _frame.BorderBrush = Brushes.Transparent;
                 _frame.Effect = Theme.Shadow(24, 0.3, 8);
                 return;

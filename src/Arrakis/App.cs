@@ -65,6 +65,9 @@ namespace Arrakis
         public CaptureModule Capture { get; } = new CaptureModule();
         public FocusModule Focus { get; } = new FocusModule();
         public BatteryModule Battery { get; } = new BatteryModule();
+        public QuickControlsModule Controls { get; } = new QuickControlsModule();
+        public NotesModule Notes { get; } = new NotesModule();
+        public NetworkModule Network { get; } = new NetworkModule();
 
         private EventWaitHandle _showEvent;
 
@@ -126,7 +129,7 @@ namespace Arrakis
             }
         }
 
-        public IModule[] Modules => new IModule[] { Dock, Widgets, Wallpaper, Clipboard, Capture, Focus, Battery };
+        public IModule[] Modules => new IModule[] { Dock, Widgets, Wallpaper, Clipboard, Capture, Focus, Battery, Controls, Notes, Network };
 
         private void StartModules()
         {

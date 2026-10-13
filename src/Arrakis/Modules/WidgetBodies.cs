@@ -40,6 +40,99 @@ namespace Arrakis.Modules
             if ((Item.Kind == "News" || Item.Kind == "Stocks") && minutes % 15 == 0) Rebuild();
         }
 
+        // ---------------- Quick note sticky ----------------
+        private Action _noteChanged;
+
+        private UIElement QuickNoteBody()
+        {
+            var note = NoteStore.Find(Item.Source);
+            if (_noteChanged == null)
+            {
+                _noteChanged = () => { if (IsLoaded) Dispatcher.BeginInvoke(new Action(Rebuild)); };
+                NoteStore.Changed += _noteChanged;
+                Closed += (s, e) => NoteStore.Changed -= _noteChanged;
+            }
+            var ink = Theme.Brush("#2A2108");
+            if (note == null) return UI.Text("This note was deleted.", 14, ink);
+            var box = new TextBox
+            {
+                Text = note.Text,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = ink,
+                CaretBrush = ink,
+                FontSize = 15,
+                FontWeight = FontWeights.Medium,
+                MinHeight = 80,
+                MaxHeight = 320,
+                Width = 240,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                IsReadOnly = true,
+                Cursor = Cursors.Arrow
+            };
+            System.Windows.Automation.AutomationProperties.SetName(box, "Sticky note");
+            box.MouseDoubleClick += (s, e) =>
+            {
+                box.IsReadOnly = false;
+                box.Cursor = Cursors.IBeam;
+                Activate();
+                box.Focus();
+            };
+            box.LostKeyboardFocus += (s, e) =>
+            {
+                box.IsReadOnly = true;
+                box.Cursor = Cursors.Arrow;
+                if (note.Text == box.Text) return;
+                note.Text = box.Text;
+                note.Updated = DateTime.Now;
+                var handler = _noteChanged;
+                NoteStore.Changed -= handler;     // don't rebuild ourselves while saving
+                NoteStore.Save();
+                NoteStore.Changed += handler;
+            };
+            return UI.V(6, UI.Text("NOTE", 11, Theme.Brush("#6B5310"), FontWeights.Bold), box);
+        }
+
+        // ---------------- Ping ----------------
+        private bool _pinging;
+
+        private UIElement PingBody()
+        {
+            if (!_pinging)
+            {
+                _pinging = true;
+                NetPing.Acquire();
+                Action onPing = () => Dispatcher.BeginInvoke(new Action(() => _tick?.Invoke()));
+                NetPing.Updated += onPing;
+                Closed += (s, e) => { NetPing.Updated -= onPing; NetPing.Release(); };
+            }
+            var now = UI.Text("-", 30, Theme.Text, FontWeights.SemiBold, true);
+            var sub = UI.Text("", 12, Theme.Muted);
+            var dot = new System.Windows.Shapes.Ellipse { Width = 8, Height = 8, Fill = Theme.Muted, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
+            var canvas = new Canvas { Width = 180, Height = 40, ClipToBounds = true };
+            var line = new System.Windows.Shapes.Polyline { Stroke = Theme.Teal, StrokeThickness = 2 };
+            canvas.Children.Add(line);
+            _tick = () =>
+            {
+                var pts = NetPing.Samples.Skip(Math.Max(0, NetPing.Samples.Count - 40)).ToList();
+                line.Points.Clear();
+                int max = Math.Max(40, pts.Where(p => p.Ms.HasValue).Select(p => p.Ms.Value).DefaultIfEmpty(0).Max() + 5);
+                for (int i = 0; i < pts.Count; i++)
+                    if (pts[i].Ms.HasValue) line.Points.Add(new Point(i * 180 / 39.0, 38 - 34.0 * pts[i].Ms.Value / max));
+                var latest = NetPing.Latest;
+                now.Text = latest.HasValue ? latest + " ms" : pts.Count == 0 ? "..." : "Offline";
+                dot.Fill = !latest.HasValue && pts.Count > 0 ? Theme.Red : latest > 100 ? Theme.Amber : Theme.Green;
+                var (median, jitter, loss) = NetPing.Stats();
+                sub.Text = median.HasValue ? "Typical " + median + " ms · " + loss.ToString("0") + "% lost" : "to " + NetPing.Host;
+            };
+            var head = UI.H(0, dot, UI.Label("PING"));
+            var v = UI.V(4, head, now, canvas, sub);
+            v.Width = 180;
+            return v;
+        }
+
         private void AddKindMenu(ContextMenu menu)
         {
             void Add(string header, Action a)
@@ -50,6 +143,13 @@ namespace Arrakis.Modules
             }
             switch (Item.Kind)
             {
+                case "QuickNote":
+                    Add("Open in Quick notes", () => App.Instance.Notes.Open(Item.Source));
+                    break;
+                case "Ping":
+                    Add("Open Network", () => App.Instance.ShowHub("network"));
+                    Add("Run a speed test", () => App.Instance.Network.RunSpeedTestFromAnywhere());
+                    break;
                 case "Agenda":
                     Add("Refresh calendar", async () => { await CalendarFeed.Refresh(); Rebuild(); });
                     Add("Calendar settings...", () => App.Instance.ShowHub("widgets"));

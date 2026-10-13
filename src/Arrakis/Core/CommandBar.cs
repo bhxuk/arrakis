@@ -400,6 +400,14 @@ namespace Arrakis.Core
                     results.Add(new CommandItem { Title = first, Subtitle = "Clipboard · press Enter to copy", Kind = "Clipboard", Icon = Icons.Clipboard, Run = () => App.Instance.Clipboard.SetClipboard(item, false), Score = 1.5 });
                 }
             }
+            if (App.Instance.Notes.IsRunning)
+            {
+                foreach (var n in NoteStore.Search(q).Where(n => !string.IsNullOrWhiteSpace(n.Text)).Take(3))
+                {
+                    var note = n;
+                    results.Add(new CommandItem { Title = note.Title, Subtitle = "Quick note · " + note.Updated.ToString("d MMM"), Kind = "Note", Icon = Icons.NotePad, Run = () => App.Instance.Notes.Open(note.Id), Score = 1.8 });
+                }
+            }
             string web = q;
             results.Add(new CommandItem { Title = "Search the web for \"" + q + "\"", Subtitle = "Opens in your browser", Kind = "Web", Icon = Icons.Link, Run = () => Shell.Open("https://www.google.com/search?q=" + Uri.EscapeDataString(web)), Score = 0.1 });
 
@@ -449,6 +457,12 @@ namespace Arrakis.Core
                     string n = name;
                     yield return new CommandItem { Title = "Widget layout: " + n, Subtitle = "Arrakis · Widgets", Kind = "Action", Icon = Icons.Widgets, Run = () => app.Widgets.LoadLayout(n) };
                 }
+            yield return new CommandItem { Title = "Quick controls", Subtitle = "Arrakis · Volume, brightness, Wi-Fi, Bluetooth", Kind = "Action", Icon = Icons.Sliders, Run = () => DelayRun(() => app.Controls.Toggle()) };
+            yield return new CommandItem { Title = "New note", Subtitle = "Arrakis · Quick notes", Kind = "Action", Icon = Icons.NotePad, Run = () => app.Notes.Open(null, true) };
+            yield return new CommandItem { Title = "Run a speed test", Subtitle = "Arrakis · Network", Kind = "Action", Icon = Icons.Gauge, Run = () => app.Network.RunSpeedTestFromAnywhere() };
+            yield return new CommandItem { Title = SystemToggles.DarkMode ? "Turn dark mode off" : "Turn dark mode on", Subtitle = "Windows", Kind = "Action", Icon = Icons.Contrast, Run = () => SystemToggles.DarkMode = !SystemToggles.DarkMode };
+            yield return new CommandItem { Title = SystemToggles.DoNotDisturb ? "Turn do not disturb off" : "Turn do not disturb on", Subtitle = "Windows · notifications", Kind = "Action", Icon = Icons.BellOff, Run = () => SystemToggles.DoNotDisturb = !SystemToggles.DoNotDisturb };
+            yield return new CommandItem { Title = Audio.GetMute() ? "Unmute sound" : "Mute sound", Subtitle = "Windows · volume", Kind = "Action", Icon = Icons.Mute, Run = () => Audio.SetMute(!Audio.GetMute()) };
             yield return new CommandItem { Title = "Edit widgets", Subtitle = "Arrakis · Widgets", Kind = "Action", Icon = Icons.Widgets, Run = () => app.Widgets.ToggleEditMode() };
             yield return new CommandItem { Title = "Open Arrakis", Subtitle = "Arrakis", Kind = "Action", Icon = Icons.Home, Run = () => app.ShowHub() };
             foreach (var m in app.Modules)

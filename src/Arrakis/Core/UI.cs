@@ -546,6 +546,19 @@ namespace Arrakis.Core
 
     public static class Icons
     {
+        public const string Sliders = "M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M14 4v4M8 10v4M16 16v4";
+        public const string Wifi = "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5v.01";
+        public const string Bluetooth = "M7 7l10 10-5 4V3l5 4L7 17";
+        public const string Moon = "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z";
+        public const string BellOff = "M6 8a6 6 0 0 1 9.5-4.9M18 10v4l2 3H7M10 20a2 2 0 0 0 4 0M3 3l18 18";
+        public const string Mic = "M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3";
+        public const string Contrast = "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 3v18";
+        public const string Speaker = "M4 9h4l5-4v14l-5-4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11";
+        public const string Mute = "M4 9h4l5-4v14l-5-4H4zM17 9l5 6M22 9l-5 6";
+        public const string Network = "M9 3h6v5H9zM12 8v4M5 12h14M5 12v4M19 12v4M12 12v4M3 16h4v4H3zM10 16h4v4h-4zM17 16h4v4h-4z";
+        public const string Gauge = "M4 18a9 9 0 1 1 16 0M12 14l4-5M12 14v.01";
+        public const string Devices = "M3 5h13v9H3zM7 18h5M9.5 14v4M18 9h3v11h-3z";
+        public const string NotePad = "M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5";
         public const string Home = "M3 11l9-7 9 7M5 10v10h14V10";
         public const string Dock = "M4 15h16a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1zM7 11h2M11 11h2M15 11h2";
         public const string Widgets = "M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z";
