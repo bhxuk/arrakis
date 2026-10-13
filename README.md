@@ -25,9 +25,9 @@ Arrakis is one app with ten modules. Each one has its own switch, so it only doe
 
 | Module | What it does | Shortcut |
 |---|---|---|
-| **Dock** | A floating dock for your apps, with window previews, folder stacks and a dock on every screen. Can replace the taskbar. | Always on |
+| **Dock** | A smooth dock for your apps: five styles, six themes, bottom, left or right, window previews, folder stacks and a dock on every screen. Can replace the taskbar. | Always on |
 | **Widgets** | 16 widgets, from clocks, weather and your calendar to to-dos, stocks, headlines, a photo frame and ping. Saved layouts and meeting alerts. | Ctrl+Alt+W |
-| **Wallpaper** | Scenes that follow the real sun and the weather outside, your own photos, or Bing's photo of the day. On every screen. | Automatic |
+| **Wallpaper** | Scenes that follow the real sun and the weather outside, your own photos, Bing's photo of the day, or thousands of wallpapers from Wallhaven. On every screen. | Automatic |
 | **Clipboard** | Everything you copy, searchable. Snippets with shortcodes, paste as UPPERCASE and more, collections, encrypted sync between PCs. | Ctrl+Alt+V |
 | **Capture** | A full screenshot tool: area, window, full screen, all screens or delayed. Edit with 14 tools, effects and frames, then copy, save, print or pin. | Ctrl+Alt+S |
 | **Focus** | A timer pill that silences notifications, keeps distracting apps away, can start from your calendar and gives you a weekly report. | Ctrl+Alt+F |
@@ -64,15 +64,24 @@ Pick Dark, Light or Match Windows, and one of six accent colours, in Arrakis > S
 
 ### Dock
 
-Your pinned apps and everything that's open. Icons magnify as you move across them.
-Click to switch, click again to minimise, right-click to pin or close. What's playing and your focus timer sit
-next to it. Pick from three styles, and hide the Windows taskbar if you want the dock to replace it.
+Your pinned apps and everything that's open. Click to switch, click again to minimise, right-click to pin or close.
+What's playing and your focus timer sit next to it.
+
+- **Smooth**: icons ease in and out every frame and are drawn by your graphics card, so gliding across the dock doesn't stutter.
+- **Hover effects**: Magnify (icons grow and spread apart), Zoom (just the one under the mouse), Lift, or None. Turn **Smooth animations** off and nothing moves at all.
+- **Five styles**: Floating, Minimal pill, Islands (pinned, open and folders in separate groups), Edge bar and Compact bar.
+- **Six themes**: Match Arrakis, Dark glass, Light glass, Solid, Clear and Accent, with a see-through slider.
+- **Bottom, left or right** of the screen.
+- **Replace the taskbar**: hide the Windows taskbar on every screen that has a dock. **Put the taskbar back** is one click away in Arrakis > Dock, the tray menu and the Start menu.
+- **Keep windows clear of the dock**: maximised windows stop at the dock instead of going underneath.
 
 - **Window previews**: rest the mouse on an open app to see live pictures of its windows. Click one to switch, or close it from there.
 - **Window counts**: apps with more than one window show how many under the icon.
 - **Folder stacks**: Downloads is there to start with. Click it to see the newest files, and drop any folder on the dock to add another.
 - **Drag to pin**: drop an app, shortcut or file on the dock to pin it.
 - **Every screen**: turn on a dock for each monitor, each showing the windows on that screen.
+
+<img src="docs/images/dock-styles.png" alt="Eight dock looks: floating with magnify, minimal pill, islands, edge bar, compact bar, a light dock on the left, an accent dock on the right and a clear dock" width="900">
 
 <img src="docs/images/dock.png" alt="The dock with live previews of two browser windows and the Downloads folder stack open" width="900">
 
@@ -103,6 +112,14 @@ Prefer your own pictures? Point it at a folder for a slideshow, or choose a phot
 Your original wallpaper comes back when you turn it off.
 
 <img src="docs/images/wallpaper.png" alt="The wallpaper page with a large preview and the dawn, day, sunset and night scenes" width="900">
+
+**Wallhaven**: scroll through thousands of wallpapers from [wallhaven.cc](https://wallhaven.cc) right on the Wallpaper page.
+Pick Top (today, this week, month or year), Hot, Latest or Random, or search. Filter by General, Anime and People, and
+only show ones that fit your screen. Click one for a bigger preview, then **Set as wallpaper** for every screen or just one.
+There's also a mode that picks a new popular wallpaper each day. Only safe-for-work wallpapers are shown, and you don't
+need an account; add your own Wallhaven API key in the settings to use your account's preferences.
+
+<img src="docs/images/wallhaven.png" alt="The Wallhaven gallery on the Wallpaper page, with Top, Hot, Latest and Random, time ranges, categories and a grid of wallpapers" width="900">
 
 ### Clipboard
 
@@ -187,11 +204,15 @@ Press **Ctrl+Alt+N** in any app and a fresh note is ready to type into. Notes sa
 searched in the notes window (**Ctrl+F**) or from the command bar. **Pin to desktop** turns a note into a sticky that you can
 edit right there with a double-click.
 
+Every note is also saved as a **.txt file**, named after its first line, in **Documents\Arrakis Notes** (or any folder you
+choose in Arrakis > Quick notes). Click the folder button to open it. Text files you drop into that folder show up as notes,
+and edits you make to them in another app come back into Arrakis.
+
 <img src="docs/images/notes.png" alt="The Quick notes window with a list of notes and a yellow note open, and two sticky notes pinned on the desktop" width="900">
 
 ### Network
 
-- **Speed test**: download, upload, ping and jitter, with a plain-English verdict and your recent results to compare.
+- **Speed test**: download, upload, ping and jitter, shown as real transfer rates too (for example, 312 Mbps is 39 MB per second, or 2.3 GB per minute) with how long a 1 GB file takes, and your recent results to compare.
 - **Live ping**: a graph of your connection over the last few minutes, with typical ping, jitter and packet loss. There's a **Ping widget** for the desktop too.
 - **What could be slowing things down**: weak signal, 2.4 GHz when 5 GHz is available, a crowded channel, a slow link, a cable stuck at 100 Mbps, high ping or dropped packets.
 - **Devices on your network**: your router, this PC, and every phone, TV, printer and speaker that answers.
@@ -238,6 +259,7 @@ Everything Arrakis stores stays on your PC. The only things it fetches from the 
 - your calendar, from the .ics link you give it, if you add one;
 - stock prices and news headlines, only if you add those widgets;
 - a speed test with Cloudflare's public speed test servers, only when you run one;
+- wallpapers from Wallhaven, only when you open the Wallpaper page or use a Wallhaven mode;
 - your public IP address, only when you click Show on the Network page;
 - a check for a newer version on GitHub, which you can switch off in Settings.
 

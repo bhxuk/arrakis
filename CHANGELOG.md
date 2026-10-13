@@ -1,5 +1,42 @@
 # What's new
 
+## 1.4.0 (13 October 2026)
+
+**Dock**
+- Much smoother: icons ease in and out every frame and grow on the graphics card, without the whole dock being redrawn.
+  The dock window is now only as big as it needs to be, and it no longer scans for windows while the mouse is on it.
+- Four hover effects: Magnify, Zoom, Lift or None, with a slider for how much.
+- **Smooth animations** switch: turn it off and nothing moves at all.
+- Five styles: Floating, Minimal pill, Islands, Edge bar and Compact bar.
+- Six themes: Match Arrakis, Dark glass, Light glass, Solid, Clear and Accent, plus a see-through slider.
+- Put the dock at the bottom, left or right of the screen.
+- Optional dividers between pinned apps, open apps and folders.
+- **Keep windows clear of the dock**: maximised windows stop at the dock.
+- Previews, folder stacks and menus open beside the dock when it's on the left or right.
+
+**Taskbar and multiple screens**
+- Hiding the taskbar now works properly on every screen. Each screen's space is managed separately, so maximised windows
+  fill the screen and the dock sits at the very edge, on every monitor.
+- The taskbar is only hidden on screens that have a dock, so no screen is left without one.
+- New **Put the taskbar back** button in Arrakis > Dock. Restore Windows taskbar in the Start menu now fixes every screen too.
+
+**Wallpaper**
+- Browse thousands of wallpapers from Wallhaven: Top, Hot, Latest, Random and search, with categories, time ranges and
+  a "Fits my screen" filter. Scroll to load more.
+- Click one for a big preview, then set it on every screen or just one, save a copy to Pictures, or open it on Wallhaven.
+- New mode: a popular Wallhaven wallpaper each day.
+- Optional Wallhaven API key, stored encrypted for your Windows account.
+
+**Quick notes**
+- Notes are saved as .txt files in a folder you choose (Documents\Arrakis Notes to start with), kept up to date as you type.
+- Folder button in the notes window and on the Quick notes page.
+- Text files added to the folder become notes, and edits made in other apps come back in.
+- Deleted notes go to the Recycle Bin.
+
+**Network**
+- The speed test now shows what the result means in transfer terms: MB per second, GB per minute and how long a 1 GB
+  file takes to download and upload.
+
 ## 1.3.0 (13 October 2026)
 
 Three new modules, so Arrakis now has ten.

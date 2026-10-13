@@ -86,7 +86,7 @@ If Alt+Space is already used by another app, pick a different shortcut in Arraki
 
 <img src="images/dock.png" width="760" alt="The dock">
 
-The dock sits at the bottom of the screen and shows:
+The dock sits at the bottom of the screen (or the left or right, if you choose) and shows:
 
 - the **Arrakis button** on the left: click it to open the Start menu, right-click it to open the hub;
 - your **pinned apps**;
@@ -109,17 +109,42 @@ The dock sits at the bottom of the screen and shows:
 Apps with more than one window open show a small bar with the count under the icon instead of a dot.
 **Downloads** is added as a folder stack the first time you run Arrakis. Right-click a stack to open or unpin it.
 
-**Settings (Arrakis > Dock)**
+Right-click any icon > **Dock settings...** to jump straight to them.
 
-- **Style**: *Floating glass* (magnifies on hover), *Minimal pill* (no background until you hover) or *Edge bar*
-  (full width, like the classic taskbar).
-- **Hide the Windows taskbar**: use the dock instead. The taskbar always comes back when Arrakis exits.
-- **Get out of the way**: the dock slides down when a window is maximised or full screen. Push the mouse to the
-  very bottom of the screen to bring it back.
-- **Magnify on hover**, **Live activities** and **Icon size**.
-- **Window previews** and **Window counts**: both on to start with.
-- **A dock on every screen**: each monitor gets its own dock, showing the windows that are on that screen.
-- **Pinned apps** and **Folders**: remove them, or **Pin a program...** and **Add a folder...**.
+<img src="images/dock-styles.png" width="760" alt="Dock styles and themes">
+
+**Look (Arrakis > Dock)**
+
+| Setting | Choices |
+|---|---|
+| Style | *Floating* (rounded, just above the edge), *Minimal pill* (no background until you hover), *Islands* (pinned apps, open apps and folders in separate groups), *Edge bar* (full width, flush to the edge) and *Compact bar* (slim, smaller icons, like the classic taskbar) |
+| Position | Bottom, Left or Right |
+| Theme | *Match Arrakis* (follows your light or dark setting), *Dark glass*, *Light glass*, *Solid*, *Clear* and *Accent* (tinted with your accent colour) |
+| See-through | How much of your wallpaper shows through |
+| Icon size | 32 to 72 pixels |
+| Dividers | A thin line between pinned apps, open apps and folders |
+
+**Motion**
+
+- **When the mouse is over an icon**: *Magnify* (icons grow and spread apart, like on a Mac), *Zoom* (the icon under the
+  mouse grows in place), *Lift* (icons rise a little) or *None*. **How much** sets the size for Magnify and Zoom.
+- **Smooth animations**: on, everything eases in and out. Off, everything changes instantly with no movement.
+- **Get out of the way**: the dock slides away when a window is maximised or full screen on that screen. Push the mouse
+  against that edge of the screen to bring it back.
+
+**Taskbar and screens**
+
+- **Hide the Windows taskbar**: use the dock instead. The taskbar is hidden only on screens that have a dock, and
+  maximised windows then use the whole screen. It always comes back when Arrakis exits.
+- **Put the taskbar back**: brings the Windows taskbar back on every screen straight away (and turns the switch above off).
+  The tray menu has the same option, and so does Start > Arrakis > Restore Windows taskbar, which works even if Arrakis isn't running.
+- **A dock on every screen**: each monitor gets its own dock, showing the windows that are on that screen. With the
+  taskbar hidden, it's hidden on all of them.
+- **Keep windows clear of the dock**: maximised windows stop at the dock instead of going underneath it (the dock then
+  doesn't need to slide away).
+
+**Features**: Live activities, Window previews and Window counts. Underneath are your **Pinned apps** and **Folder stacks**:
+remove them, or **Pin a program...** and **Pin a folder...**.
 
 ## Widgets
 
@@ -177,6 +202,8 @@ Wallpaper is **off** until you switch it on, so Arrakis never changes your deskt
 
 Pick a **Mode**:
 
+- **Wallhaven: the one you picked** and **Wallhaven: a popular one each day** (see below).
+
 - **Follow the sun**: dawn, day, sunset and night scenes change with the real sunrise and sunset where you are.
   Arrakis uses the city you set for the weather widget (or Birmingham, UK until you set one).
 - **Dawn**, **Day**, **Sunset** or **Night**: keep one scene.
@@ -191,6 +218,28 @@ With the scenes you can also switch on:
 
 Every screen gets a picture drawn at its own size, and with your photos each screen gets a different one.
 When you switch Wallpaper off (or click **Put my old wallpaper back**), your original wallpaper comes back.
+
+### Wallhaven
+
+<img src="images/wallhaven.png" width="760" alt="The Wallhaven gallery">
+
+Further down the Wallpaper page is a gallery of wallpapers from [wallhaven.cc](https://wallhaven.cc). Scroll and more load as you go.
+
+- **Top**, with **Today**, **This week**, **This month** or **This year**; **Hot**; **Latest**; or **Random**.
+- **Search**: type something like *mountains* or *city night* and press Enter.
+- **General**, **Anime** and **People** turn those categories on and off. **Fits my screen** only shows wallpapers at
+  least as big as your main screen, in the same shape.
+- Hover a wallpaper for its size and favourites. **Click it** for a big preview, its colours, and:
+  - **Set as wallpaper**: on every screen.
+  - **Set on this screen**: with more than one screen, pick one from the list.
+  - **Save a copy**: into Pictures\Wallhaven.
+  - **Open on Wallhaven**: its page on the website.
+
+Setting one switches the Mode to *Wallhaven: the one you picked*. Pictures you set are kept in the Arrakis settings
+folder (the 30 most recent). **Wallhaven: a popular one each day** picks something new from the week's top list every morning.
+
+Only safe-for-work wallpapers are shown. You don't need an account. If you have one, paste your **API key** (wallhaven.cc >
+Settings > Account) into the box under the gallery and click **Save key**; it's stored encrypted for your Windows account.
 
 ## Clipboard
 
@@ -431,7 +480,19 @@ Press **Ctrl+Alt+N** in any app. The notes window opens with a fresh note ready 
 - **Copy** puts the whole note on the clipboard. **Delete** removes it (and its sticky).
 - **Esc** closes the window. Empty notes are tidied away when you close it.
 
-Notes are kept in `notes.json` in the Arrakis settings folder, only on this PC, and they're included when you export a backup.
+**Notes as text files**: every note is also saved as a `.txt` file, named after its first line, in **Documents\Arrakis Notes**.
+It's kept up to date as you type, and renamed if you change the first line. In Arrakis > Quick notes you can:
+
+- **Change folder...** to save them anywhere, such as a OneDrive or Dropbox folder.
+- Click the **folder button** to open the folder (there's one in the notes window too).
+- **Use the default** to go back to Documents\Arrakis Notes.
+- Turn **Save notes as text files** off if you'd rather they only live inside Arrakis.
+
+Text files (`.txt` or `.md`) you put in the folder show up as notes the next time you open Quick notes, keeping their
+file names. If you edit a note's file in another app, the change comes back into Arrakis. Deleting a note sends its file
+to the Recycle Bin.
+
+Notes are also kept in `notes.json` in the Arrakis settings folder and included when you export a backup.
 
 ## Network
 
@@ -442,7 +503,8 @@ link speed to the router, this PC's address, the router's address and DNS. Click
 On a cable it shows the link speed instead.
 
 **Speed test**: click **Run speed test**. It measures ping and jitter, then download and upload, using Cloudflare's
-public speed test servers. It takes about 20 seconds and can use a few hundred MB on a fast connection, so be careful
+public speed test servers. Underneath, it says what the result means for files: 8 megabits make a megabyte, so
+312 Mbps is about 39 MB per second, or 2.3 GB per minute, and a 1 GB file takes about 26 seconds. It takes about 20 seconds and can use a few hundred MB on a fast connection, so be careful
 on a mobile hotspot. Your last results are listed underneath, with the network you were on. You can also start one
 from the command bar or the tray menu.
 

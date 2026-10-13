@@ -99,7 +99,7 @@ namespace Arrakis.Modules
             D.HideTaskbar = false;
             Settings.Save();
             if (IsRunning) ApplyTaskbar(); else TaskbarManager.Restore();
-            TaskbarManager.EmergencyRestore();
+            if (!IsRunning || !D.ReserveSpace) TaskbarManager.EmergencyRestore();
             foreach (var w in _windows) w.Reposition();
         }
 
@@ -996,7 +996,7 @@ namespace Arrakis.Modules
                 // A band from the edge of the screen out past the grown icons, so the dock doesn't flicker between icons.
                 double outward = S.Position == "Left" ? across - thick : S.Position == "Right" ? -across : -across;
                 double inward = S.Position == "Left" ? -across : S.Position == "Right" ? across - thick : across - thick;
-                bool inBand = outward <= (_hovering ? Headroom : 4) && inward <= 30 && along >= -size * 0.6 && along <= len + size * 0.6 && !_hidden;
+                bool inBand = outward <= (_hovering ? Headroom : 18) && inward <= 30 && along >= -size * 0.6 && along <= len + size * 0.6 && !_hidden;
                 if (inBand) anyHover = true;
                 // Map the mouse into un-magnified coordinates by its fraction along the dock.
                 double baseAlong = len > 0 ? (along < 0 ? along : along > len ? isl.BaseLength + (along - len) : along / len * isl.BaseLength) : along;
