@@ -150,36 +150,93 @@ Change the size, turn off image saving or clear everything in Arrakis > Clipboar
 
 <img src="images/capture.png" width="760" alt="Screenshot editor">
 
-1. Press **Ctrl+Alt+S** (or use the tray menu). The screen freezes.
-2. **Drag** over the area you want. Press **Enter** (or just click) for the whole screen, **Esc** to cancel.
-3. The editor opens.
+### Taking a screenshot
 
-**Tools** (top bar):
-
-| Tool | How to use it |
+| Shortcut | Captures |
 |---|---|
-| Select | Drag anything you've added to move it |
-| Arrow | Drag from where it starts to where it points |
-| Box | Drag to draw an outline |
-| Text | Click where you want it and type. Enter to finish |
-| Highlight | Drag over something to highlight it |
-| Blur | Drag over anything private to pixelate it |
-| Steps | Click to drop numbered circles: 1, 2, 3... |
+| Ctrl+Alt+S | An area you drag, or a window you click |
+| Ctrl+Alt+D | A window (hover to see it outlined, click to take it) |
+| Ctrl+Alt+A | The whole screen the mouse is on |
 
-Pick a colour from the circles next to the tools. **Ctrl+Z** undoes.
+The tray menu (right-click the Arrakis icon > **Screenshot**) and Arrakis > Capture also have **All screens**,
+**Last area again** and **Area in 5 seconds**, which gives you time to open a menu first.
 
-**Frame** (right side): put the screenshot on a background (*Sunset*, *Ocean*, *Meadow*, *Light*, *Dark* or none),
-and set the padding, rounded corners and shadow.
+**Using the Print Screen key**: switch on *Use the Print Screen key* in Arrakis > Capture to get Greenshot-style keys:
+**Print Screen** for an area, **Alt+Print Screen** for a window, **Ctrl+Print Screen** for the full screen and
+**Shift+Print Screen** for the last area again. Windows may already use Print Screen for Snipping Tool; turn that off in
+Windows Settings > Accessibility > Keyboard first.
 
-**Private details**: email addresses are found and blurred automatically when the editor opens
-(switch this off in Arrakis > Capture). Click **Blur emails now** to run it again. This uses Windows' built-in text
-recognition, so nothing leaves your PC.
+<img src="images/capture-overlay.png" width="760" alt="Picking an area with the magnifier">
 
-**When you're done**: **Copy** (Ctrl+C) to paste it somewhere, **Save** (Ctrl+S) as PNG or JPG, or
-**Pin to screen** to float it above everything (drag to move, scroll to resize, double-click to close).
+**While picking an area**
 
-You can also set Arrakis to use the **Print Screen** key in Arrakis > Capture. Windows may already use that key
-for Snipping Tool; turn that off in Windows Settings > Accessibility > Keyboard first.
+| Do this | And this happens |
+|---|---|
+| Drag | Capture that area |
+| Click | Capture the window under the mouse |
+| Space | Switch between area and window mode |
+| Arrow keys | Move the mouse one pixel at a time |
+| C | Copy the colour under the mouse (for example `#E2585F`) |
+| Enter | Capture the whole screen |
+| Esc or right-click | Cancel |
+
+The magnifier shows the pixels around the mouse, the exact position and the colour. Switch it off in Arrakis > Capture
+if you don't want it. You can also choose to include the mouse pointer in screenshots.
+
+### Editing
+
+**Tools** (top bar). Each has a one-letter shortcut:
+
+| Tool | Key | How to use it |
+|---|---|---|
+| Select | V | Click something you've added to select it. Drag to move, arrow keys to nudge (Shift for bigger steps), Delete to remove, click a colour to recolour. Double-click text to edit it |
+| Box | R | Drag. Shift for a square |
+| Ellipse | E | Drag. Shift for a circle |
+| Line | L | Drag. Shift snaps to 45° |
+| Arrow | A | Drag from where it starts to where it points. Shift snaps to 45° |
+| Pen | F | Draw freehand |
+| Text | T | Click and type. Enter to finish, Shift+Enter for a new line |
+| Callout | S | Click to add a speech bubble and type |
+| Steps | N | Click to drop numbered circles: 1, 2, 3... |
+| Highlight | H | Drag over something to highlight it |
+| Pixelate | P | Drag over anything private |
+| Blur | B | Drag over anything private for a soft blur |
+| Crop | C | Drag the area you want to keep |
+| Colour | I | Click the picture to use that colour (the hex code is copied too) |
+
+**Style** (right side): colour, fill for boxes and ellipses (*None*, *Soft* or *Solid*), line thickness, text size and
+a soft shadow on shapes.
+
+**Image**: rotate left or right, flip, resize, greyscale, invert, border (in the current colour), drop shadow and torn edges.
+These apply to the picture with everything you've drawn on it, and can be undone.
+
+**Frame**: put the screenshot on a background (*Sunset*, *Ocean*, *Meadow*, *Dusk*, *Light*, *Dark* or none), with padding,
+rounded corners and a shadow.
+
+**Text in the picture**: *Blur emails* finds email addresses and pixelates them (this also happens automatically when the
+editor opens; switch it off in Arrakis > Capture). *Copy text* reads all the words in the picture and copies them.
+Both use Windows' built-in text recognition, so nothing leaves your PC.
+
+**Undo and redo**: Ctrl+Z and Ctrl+Y, or the buttons at the top right. **Zoom**: Ctrl and the mouse wheel, Ctrl+0 to fit,
+Ctrl+1 for actual size.
+
+### Sharing it
+
+| Button | Shortcut | Does |
+|---|---|---|
+| Copy | Ctrl+C | Copies the finished picture |
+| Save | Ctrl+S | Saves straight to your screenshot folder using your file name pattern. Click the message at the bottom to show the file |
+| Save as... | Ctrl+Shift+S | Choose where, and PNG, JPG, BMP, GIF or TIFF |
+| Print | Ctrl+P | Prints it, fitted to the page |
+| Paint / Open with... | | Opens it in Paint or any other app |
+| Pin | | Floats it above everything. Drag to move, scroll to resize, double-click to close, right-click to copy or edit |
+
+### Capture settings (Arrakis > Capture)
+
+- **After a capture**: open the editor (default), or skip it and copy, save, or copy and save straight away.
+- **Folder, file name and format**: the file name can use dates like `{yyyy-MM-dd HH.mm.ss}` and `{title}` for the window's name.
+- **Recent**: your latest saved screenshots. Click one to edit it again.
+- **Edit an image file...** and **Edit image on clipboard** open any picture in the editor.
 
 ## Focus
 
@@ -219,7 +276,9 @@ For laptops and tablets. On a desktop PC it just says there's no battery; switch
 | Shortcut | Does |
 |---|---|
 | Ctrl+Alt+V | Open the clipboard |
-| Ctrl+Alt+S | Take a screenshot |
+| Ctrl+Alt+S | Screenshot of an area |
+| Ctrl+Alt+D | Screenshot of a window |
+| Ctrl+Alt+A | Screenshot of the full screen |
 | Ctrl+Alt+F | Start, pause or resume focus |
 | Ctrl+Alt+W | Show or hide widget remove buttons |
 

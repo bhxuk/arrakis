@@ -280,7 +280,7 @@ namespace Arrakis.Modules
             layout.Children.Add(_scroll);
             Content = layout;
 
-            _canvas.MouseLeftButtonDown += OnDown;
+            _canvas.PreviewMouseLeftButtonDown += OnDown;
             _canvas.MouseMove += OnMove;
             _canvas.MouseLeftButtonUp += OnUp;
             PreviewKeyDown += OnKey;
@@ -507,7 +507,9 @@ namespace Arrakis.Modules
         {
             var p = Clamp(e.GetPosition(_canvas));
             _down = p;
-            if (_editing != null && !(e.OriginalSource is DependencyObject d0 && IsInside(d0, _editing.El))) CommitText();
+            // Clicks inside the text being typed belong to the text box.
+            if (_editing != null && e.OriginalSource is DependencyObject d0 && IsInside(d0, _editing.El)) return;
+            if (_editing != null) CommitText();
 
             switch (_tool)
             {
@@ -518,6 +520,7 @@ namespace Arrakis.Modules
                     if (hit != null)
                     {
                         if (e.ClickCount == 2 && hit.Text != null) { BeginEdit(hit); e.Handled = true; return; }
+                        e.Handled = true;
                         _moving = true;
                         _moveStart = p;
                         var t = Translate(hit.El);

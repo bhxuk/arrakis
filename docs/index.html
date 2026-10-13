@@ -156,6 +156,26 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding:30px 0 50px;colo
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover{color:var(--text)}
 
+
+/* ---------- screenshot studio ---------- */
+.studio-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:40px;align-items:center;margin-top:44px}
+.studio-copy h3{font-family:var(--display);font-size:26px;letter-spacing:-.02em;font-weight:600}
+.studio-copy p{color:var(--muted);margin-top:10px}
+.ticks{list-style:none;margin-top:18px;display:grid;gap:10px}
+.ticks li{position:relative;padding-left:28px;color:#dcdad5;font-size:15.5px}
+.ticks li::before{content:"";position:absolute;left:2px;top:.5em;width:12px;height:7px;border-left:2.4px solid var(--teal);border-bottom:2.4px solid var(--teal);transform:rotate(-45deg)}
+.ticks kbd,.modes kbd{font-family:var(--body);font-size:12.5px;font-weight:700;background:rgba(255,255,255,.09);border:1px solid var(--line2);border-bottom-width:2px;padding:1px 7px;border-radius:7px}
+.modes{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:44px}
+.modes div{background:var(--bg);padding:16px 12px;text-align:center}
+.modes b{display:block;font-size:15px}
+.modes span{color:var(--muted);font-size:13px}
+.toolgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.toolgrid div{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px}
+.toolgrid h3{font-size:17px;margin-bottom:6px}
+.toolgrid p{color:var(--muted);font-size:14.5px}
+@media (max-width:860px){.studio-grid{grid-template-columns:1fr;gap:24px}.modes{grid-template-columns:repeat(3,1fr)}.toolgrid{grid-template-columns:1fr}}
+@media (max-width:480px){.modes{grid-template-columns:repeat(2,1fr)}}
+
 /* reveal on scroll */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
 .reveal.in{opacity:1;transform:none}
@@ -169,6 +189,7 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
   <nav aria-label="Main">
     <a class="brand" href="#top"><img src="images/icon.png" alt="">Arrakis</a>
     <a class="link" href="#tour">Tour</a>
+    <a class="link" href="#studio">Screenshots</a>
     <a class="link" href="#install">Install</a>
     <a class="link" href="https://github.com/bhxuk/arrakis">GitHub</a>
     <a class="get" href="https://github.com/bhxuk/arrakis/releases/latest/download/Arrakis-Setup.exe">Download</a>
@@ -179,9 +200,9 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
 <header class="hero" id="top">
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap">
-    <a class="badge" href="https://github.com/bhxuk/arrakis/releases/latest"><span>v1.0</span>Seven modules, one small app</a>
+    <a class="badge" href="#studio"><span>New in 1.1</span>A full screenshot studio</a>
     <h1>Your whole desktop,<br><span class="grad">finally yours.</span></h1>
-    <p class="lead">A dock, desktop widgets, a wallpaper that follows the sun, a proper clipboard, a screenshot editor, a focus timer and battery health. For Windows 10 and 11. Switch on only what you want.</p>
+    <p class="lead">A dock, desktop widgets, a wallpaper that follows the sun, a proper clipboard, a full screenshot studio, a focus timer and battery health. For Windows 10 and 11. Switch on only what you want.</p>
     <div class="cta">
       <a class="btn primary" href="https://github.com/bhxuk/arrakis/releases/latest/download/Arrakis-Setup.exe">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
@@ -269,10 +290,11 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
       <div class="frame"><img src="images/clipboard.png" width="1920" height="1200" alt="The clipboard panel with search, filters and pinned items" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-cap" aria-labelledby="t-cap" hidden>
-      <div><h3>Capture</h3><p>Drag over anything on screen, then mark it up and make it look good.</p>
-        <ul><li>Arrows, boxes, text, highlights, blur and numbered steps</li><li>Sunset, ocean and meadow frames with shadow</li><li>Email addresses blurred for you, on your PC</li><li>Copy, save, or pin it above everything</li></ul>
-        <span class="shortcut"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>S</kbd> take a screenshot</span></div>
-      <div class="frame"><img src="images/capture.png" width="1920" height="1200" alt="The screenshot editor with numbered steps, an arrow and a blurred email" loading="lazy"></div>
+      <div><h3>Capture</h3><p>A full screenshot studio: grab an area, a window or every screen, then mark it up with 14 tools.</p>
+        <ul><li>Area, window, full screen, all screens, last area or delayed</li><li>Magnifier with exact pixel and colour</li><li>Callouts, steps, arrows, blur, crop and more</li><li>Copy text out of any screenshot</li></ul>
+        <span class="shortcut"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>S</kbd> area &#160; <kbd>D</kbd> window &#160; <kbd>A</kbd> screen</span>
+        <p style="margin-top:14px"><a href="#studio" style="color:var(--amber);font-weight:700;text-decoration:none">See everything it does &rarr;</a></p></div>
+      <div class="frame"><img src="images/capture.png" width="1920" height="1200" alt="The screenshot editor with 14 tools, a callout, numbered steps, an arrow, a blurred email and a sunset frame" loading="lazy"></div>
     </div>
     <div class="panel" role="tabpanel" id="p-focus" aria-labelledby="t-focus" hidden>
       <div><h3>Focus</h3><p>A small pill counts down at the top of your screen while everything else goes quiet.</p>
@@ -289,6 +311,45 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
   </div>
 </section>
 
+<section id="studio">
+  <div class="wrap">
+    <div class="center reveal">
+      <p class="kicker">New in 1.1 · Capture</p>
+      <h2>A screenshot studio,<br>built right in.</h2>
+      <p class="intro">Everything you'd want from a dedicated screenshot app like Greenshot, in the same calm design as the rest of Arrakis.</p>
+    </div>
+
+    <div class="studio-grid reveal">
+      <div class="frame"><img src="images/capture-overlay.png" width="1920" height="1200" alt="Picking an area on screen, with the size shown and a magnifier showing the exact pixel and colour" loading="lazy"></div>
+      <div class="studio-copy">
+        <h3>Pick exactly what you want</h3>
+        <p>The screen freezes so nothing moves. Drag an area, or hover and click a window. A magnifier shows the exact pixel, its position and its colour.</p>
+        <ul class="ticks"><li><kbd>Space</kbd> switches between area and window</li><li><kbd>C</kbd> copies the colour under the mouse</li><li>Arrow keys nudge one pixel at a time</li><li>Optional mouse pointer in the shot</li></ul>
+      </div>
+    </div>
+
+    <div class="modes reveal">
+      <div><b>Area</b><span>Ctrl+Alt+S</span></div>
+      <div><b>Window</b><span>Ctrl+Alt+D</span></div>
+      <div><b>Full screen</b><span>Ctrl+Alt+A</span></div>
+      <div><b>All screens</b><span>Tray menu</span></div>
+      <div><b>Last area</b><span>Shift+PrtSc</span></div>
+      <div><b>In 5 seconds</b><span>Tray menu</span></div>
+    </div>
+
+    <div class="frame reveal" style="margin-top:28px"><img src="images/capture.png" width="1920" height="1200" alt="The screenshot editor with 14 tools, style options, image effects and frames" loading="lazy"></div>
+
+    <div class="toolgrid reveal">
+      <div><h3>14 tools</h3><p>Select, box, ellipse, line, arrow, pen, text, callout, numbered steps, highlight, pixelate, blur, crop and a colour picker. Each one has a single-key shortcut.</p></div>
+      <div><h3>Change your mind</h3><p>Move, nudge, recolour and delete anything you've drawn. Full undo and redo, and zoom with Ctrl and the wheel.</p></div>
+      <div><h3>Effects</h3><p>Rotate, flip, resize, greyscale, invert, border, drop shadow and torn edges. Then add a frame with padding and rounded corners.</p></div>
+      <div><h3>Private by default</h3><p>Email addresses are blurred automatically, and Copy text reads the words in any screenshot. Both run on your PC.</p></div>
+      <div><h3>Every way out</h3><p>Copy, quick-save with your own file names, Save as PNG, JPG, BMP, GIF or TIFF, print, open in Paint, or pin it on top.</p></div>
+      <div><h3>Or skip the editor</h3><p>Set screenshots to go straight to the clipboard or a folder. Print Screen keys work just like Greenshot's.</p></div>
+    </div>
+  </div>
+</section>
+
 <section>
   <div class="wrap">
     <div class="center reveal">
@@ -300,9 +361,11 @@ footer a{color:var(--muted);text-decoration:none;margin-left:16px}footer a:hover
         <h3>Keyboard first</h3><p>Everything you use often is one shortcut away, from anywhere.</p>
         <div class="keys">
           <div>Clipboard <kbd>Ctrl+Alt+V</kbd></div>
-          <div>Screenshot <kbd>Ctrl+Alt+S</kbd></div>
+          <div>Screenshot area <kbd>Ctrl+Alt+S</kbd></div>
+          <div>Screenshot window <kbd>Ctrl+Alt+D</kbd></div>
           <div>Focus <kbd>Ctrl+Alt+F</kbd></div>
           <div>Edit widgets <kbd>Ctrl+Alt+W</kbd></div>
+          <div>Full screen <kbd>Ctrl+Alt+A</kbd></div>
         </div>
       </div>
       <div class="b-small"><span class="ic teal" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></span><h3>Taskbar safety net</h3><p>Hide the taskbar if you like. It always comes back when Arrakis closes.</p></div>

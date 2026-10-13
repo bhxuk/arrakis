@@ -28,7 +28,7 @@ Arrakis is one app with seven modules. Each one has its own switch, so it only d
 | **Widgets** | Clock, weather, calendar, system rings, battery, now playing, notes and countdowns on your desktop. | Ctrl+Alt+W |
 | **Wallpaper** | Dawn, day, sunset and night scenes that change with real sunrise and sunset times. Or Bing's photo of the day. | Automatic |
 | **Clipboard** | Everything you copy, searchable. Pin things, stack several copies and paste them together, paste as plain text. | Ctrl+Alt+V |
-| **Capture** | Screenshots with arrows, boxes, text, highlights, blur and numbered steps, plus pretty frames. Blurs email addresses for you. | Ctrl+Alt+S |
+| **Capture** | A full screenshot tool: area, window, full screen, all screens or delayed. Edit with 14 tools, effects and frames, then copy, save, print or pin. | Ctrl+Alt+S |
 | **Focus** | A timer pill at the top of the screen that silences notifications, plays rain or ocean sounds and tracks your week. | Ctrl+Alt+F |
 | **Battery** | Battery wear, charge history and a nudge to unplug at 80%. For laptops. | Laptops |
 
@@ -71,10 +71,24 @@ Links, colours and images are recognised. Password managers that mark copies as 
 
 ### Capture
 
-Press **Ctrl+Alt+S**, drag over what you want, then mark it up. Copy, save or pin it on top of everything.
-Email addresses are found and blurred automatically, using Windows' own text recognition on your PC.
+A full screenshot tool in the spirit of Greenshot.
 
-<img src="docs/images/capture.png" alt="The screenshot editor with numbered steps, an arrow, a blurred email and a sunset frame" width="900">
+**Capture** an area (**Ctrl+Alt+S**), a window (**Ctrl+Alt+D**), the full screen (**Ctrl+Alt+A**), every screen at once,
+the same area as last time, or after a 5-second countdown. While you pick, a magnifier shows the exact pixel and its colour,
+windows light up as you hover them, and **Space** switches between area and window mode. You can also use the
+Print Screen keys the way Greenshot does.
+
+<img src="docs/images/capture-overlay.png" alt="Picking an area, with the size shown and a magnifier showing the pixel under the mouse" width="900">
+
+**Edit** with 14 tools: select and move, box, ellipse, line, arrow, freehand pen, text, speech-bubble callouts, numbered steps,
+highlighter, pixelate, blur, crop and a colour picker. Everything can be recoloured, moved, deleted and undone.
+Then rotate, flip, resize, greyscale, invert, add a border, a drop shadow or torn edges, and put it on a frame.
+**Copy text** reads the words in a screenshot, and email addresses are blurred for you, all on your PC.
+
+**Share** it: copy, quick-save with your own file name pattern, save as PNG, JPG, BMP, GIF or TIFF, print, open in Paint
+or any other app, or pin it on top of everything. If you don't need the editor, set captures to go straight to the clipboard or a folder.
+
+<img src="docs/images/capture.png" alt="The screenshot editor with 14 tools, a callout, numbered steps, an arrow, a blurred email, image effects and a sunset frame" width="900">
 
 ### Focus
 
