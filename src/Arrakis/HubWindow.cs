@@ -389,12 +389,7 @@ namespace Arrakis
             var folder = FlatButton.Secondary("Open settings folder", () => Shell.Open(Settings.Folder));
             var site = FlatButton.Secondary("Website and user guide", () => Shell.Open("https://bhxuk.github.io/arrakis/"));
             var issues = FlatButton.Secondary("Report a problem", () => Shell.Open("https://github.com/bhxuk/arrakis/issues"));
-            var taskbar = FlatButton.Secondary("Show the Windows taskbar now", () =>
-            {
-                Settings.Current.Dock.HideTaskbar = false;
-                Settings.Save();
-                TaskbarManager.Restore();
-            });
+            var taskbar = FlatButton.Secondary("Show the Windows taskbar now", () => App.Instance.Dock.PutTaskbarBack());
             var quit = FlatButton.Secondary("Exit Arrakis", () => App.Instance.Quit());
 
             return UI.V(16,

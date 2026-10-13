@@ -21,6 +21,14 @@ namespace Arrakis.Core
         public bool Previews { get; set; } = true;
         public bool WindowCounts { get; set; } = true;
         public bool AllMonitors { get; set; } = false;
+        public string Position { get; set; } = "Bottom";     // Bottom, Left, Right
+        public string Theme { get; set; } = "Auto";          // Auto, Dark, Light, Solid, Clear, Accent
+        public int Opacity { get; set; } = 85;
+        public string HoverEffect { get; set; } = "";        // Magnify, Zoom, Lift, None ("" = from the old Magnify switch)
+        public int MagnifyAmount { get; set; } = 60;
+        public bool Animations { get; set; } = true;
+        public bool ShowDivider { get; set; } = true;
+        public bool ReserveSpace { get; set; } = false;
     }
 
     public class WidgetInstance

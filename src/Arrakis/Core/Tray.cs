@@ -37,12 +37,7 @@ namespace Arrakis.Core
             menu.Items.Add("Edit widgets", null, (s, e) => App.Instance.Widgets.ToggleEditMode());
             menu.Items.Add("Run a speed test", null, (s, e) => App.Instance.Network.RunSpeedTestFromAnywhere());
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-            menu.Items.Add("Show Windows taskbar", null, (s, e) =>
-            {
-                Settings.Current.Dock.HideTaskbar = false;
-                Settings.Save();
-                TaskbarManager.Restore();
-            });
+            menu.Items.Add("Show Windows taskbar", null, (s, e) => App.Instance.Dock.PutTaskbarBack());
             menu.Items.Add("Exit Arrakis", null, (s, e) => App.Instance.Quit());
             _icon.ContextMenuStrip = menu;
             _icon.BalloonTipClicked += (s, e) => { var a = _onClick; _onClick = null; a?.Invoke(); };

@@ -31,14 +31,157 @@ namespace Arrakis.Core
         }
     }
 
-    /// <summary>Hides and restores the Windows taskbar for the "replace the taskbar" option.</summary>
+    /// <summary>One screen that has a dock on it.</summary>
+    public struct DockScreen
+    {
+        public IntPtr Monitor;
+        public string Edge;        // Bottom, Left, Right
+        public int ReservePx;      // 0 = windows may go under the dock
+    }
+
+    /// <summary>
+    /// Hides and restores the Windows taskbar, and manages each screen's work area (the space maximised windows use).
+    /// Windows only frees the taskbar's space on the main screen by itself, so every screen is handled separately here.
+    /// The taskbar is only hidden on screens that have a dock, so no screen is ever left without one.
+    /// </summary>
     public static class TaskbarManager
     {
+        private static readonly Dictionary<IntPtr, Native.RECT> Original = new Dictionary<IntPtr, Native.RECT>();
+        private static readonly HashSet<IntPtr> HiddenTrays = new HashSet<IntPtr>();
+        private static List<DockScreen> _docks = new List<DockScreen>();
+        private static bool _hide;
         private static bool _hidden;
-        private static Native.RECT _savedWorkArea;
-        private static bool _haveSaved;
 
         public static bool IsHidden => _hidden;
+
+        public static bool IsHiddenOn(IntPtr monitor) => _hidden && _docks.Exists(d => d.Monitor == monitor);
+
+        /// <summary>The area a dock should sit in on this screen: the whole screen if its taskbar is hidden,
+        /// otherwise the space next to the taskbar. Never includes space the dock itself reserved.</summary>
+        public static Native.RECT BaseArea(IntPtr monitor)
+        {
+            var mi = Info(monitor);
+            if (IsHiddenOn(monitor)) return mi.rcMonitor;
+            return Original.TryGetValue(monitor, out var r) ? r : mi.rcWork;
+        }
+
+        /// <summary>Applies the taskbar and work-area settings for these docks. Safe to call often.</summary>
+        public static void Apply(List<DockScreen> docks, bool hideTaskbar)
+        {
+            _docks = docks ?? new List<DockScreen>();
+            _hide = hideTaskbar;
+            try
+            {
+                // 1. Taskbars: hide the ones on docked screens, show the rest.
+                foreach (var h in TaskbarWindows())
+                {
+                    var mon = Native.MonitorFromWindow(h, Native.MONITOR_DEFAULTTONEAREST);
+                    bool shouldHide = _hide && _docks.Exists(d => d.Monitor == mon);
+                    if (shouldHide)
+                    {
+                        if (!Original.ContainsKey(mon)) Original[mon] = Info(mon).rcWork;
+                        if (Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_HIDE);
+                        HiddenTrays.Add(h);
+                    }
+                    else if (HiddenTrays.Contains(h))
+                    {
+                        Native.ShowWindow(h, Native.SW_SHOW);
+                        HiddenTrays.Remove(h);
+                    }
+                }
+                _hidden = _hide && HiddenTrays.Count > 0;
+
+                // 2. Work areas, screen by screen.
+                foreach (var mon in Monitors())
+                {
+                    var mi = Info(mon);
+                    var dock = _docks.Find(d => d.Monitor == mon);
+                    bool docked = dock.Monitor == mon && mon != IntPtr.Zero;
+                    bool hiddenHere = _hide && docked;
+                    bool reserve = docked && dock.ReservePx > 0;
+                    if (!hiddenHere && !reserve)
+                    {
+                        // Nothing to change here: put back what Windows had, if we changed it.
+                        if (Original.TryGetValue(mon, out var orig))
+                        {
+                            if (!Same(mi.rcWork, orig)) SetWork(orig);
+                            Original.Remove(mon);
+                        }
+                        continue;
+                    }
+                    if (!Original.ContainsKey(mon)) Original[mon] = mi.rcWork;
+                    var want = hiddenHere ? mi.rcMonitor : Original[mon];
+                    if (reserve)
+                    {
+                        switch (dock.Edge)
+                        {
+                            case "Left": want.Left += dock.ReservePx; break;
+                            case "Right": want.Right -= dock.ReservePx; break;
+                            default: want.Bottom -= dock.ReservePx; break;
+                        }
+                    }
+                    if (!Same(mi.rcWork, want)) SetWork(want);
+                }
+            }
+            catch (Exception ex) { Log.Write("Taskbar apply failed: " + ex.Message); }
+        }
+
+        /// <summary>Called on a timer: Explorer sometimes shows the taskbar or resets work areas (for example after it restarts).</summary>
+        public static void Enforce()
+        {
+            if (_docks.Count == 0) return;
+            Apply(_docks, _hide);
+        }
+
+        /// <summary>Puts every taskbar and work area back the way Windows had them.</summary>
+        public static void Restore()
+        {
+            try
+            {
+                foreach (var h in TaskbarWindows()) if (!Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_SHOW);
+                HiddenTrays.Clear();
+                foreach (var kv in Original) SetWork(kv.Value);
+                Original.Clear();
+                _docks = new List<DockScreen>();
+                _hidden = false;
+                _hide = false;
+            }
+            catch (Exception ex) { Log.Write("Restore taskbar failed: " + ex.Message); }
+        }
+
+        /// <summary>Used by the "Restore Windows taskbar" shortcut. Works even if Arrakis crashed, on every screen.</summary>
+        public static void EmergencyRestore()
+        {
+            var trays = TaskbarWindows();
+            foreach (var h in trays) Native.ShowWindow(h, Native.SW_SHOW);
+            foreach (var mon in Monitors())
+            {
+                var mi = Info(mon);
+                var work = mi.rcMonitor;
+                foreach (var h in trays)
+                {
+                    if (Native.MonitorFromWindow(h, Native.MONITOR_DEFAULTTONEAREST) != mon) continue;
+                    if (!Native.GetWindowRect(h, out var t)) continue;
+                    if (t.Width >= t.Height && t.Top > work.Top) work.Bottom = Math.Min(work.Bottom, t.Top);
+                    else if (t.Width >= t.Height) work.Top = Math.Max(work.Top, t.Bottom);
+                    else if (t.Left > work.Left) work.Right = Math.Min(work.Right, t.Left);
+                    else work.Left = Math.Max(work.Left, t.Right);
+                }
+                SetWork(work);
+            }
+        }
+
+        // ---------- helpers ----------
+        private static bool Same(Native.RECT a, Native.RECT b) => a.Left == b.Left && a.Top == b.Top && a.Right == b.Right && a.Bottom == b.Bottom;
+
+        private static void SetWork(Native.RECT r) => Native.SystemParametersInfo(Native.SPI_SETWORKAREA, 0, ref r, Native.SPIF_SENDCHANGE);
+
+        private static Native.MONITORINFO Info(IntPtr mon)
+        {
+            var mi = new Native.MONITORINFO { cbSize = Marshal.SizeOf(typeof(Native.MONITORINFO)) };
+            Native.GetMonitorInfo(mon, ref mi);
+            return mi;
+        }
 
         private static List<IntPtr> TaskbarWindows()
         {
@@ -54,69 +197,16 @@ namespace Arrakis.Core
             return list;
         }
 
-        public static void Hide()
-        {
-            try
-            {
-                var primary = Native.GetPrimaryMonitor();
-                if (!_haveSaved)
-                {
-                    _savedWorkArea = primary.rcWork;
-                    _haveSaved = true;
-                }
-                foreach (var h in TaskbarWindows())
-                {
-                    if (Native.IsWindowVisible(h)) Native.ShowWindow(h, Native.SW_HIDE);
-                }
-                var full = primary.rcMonitor;
-                Native.SystemParametersInfo(Native.SPI_SETWORKAREA, 0, ref full, Native.SPIF_SENDCHANGE);
-                _hidden = true;
-            }
-            catch (Exception ex) { Log.Write("Hide taskbar failed: " + ex.Message); }
-        }
+        private delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdc, IntPtr rect, IntPtr data);
 
-        /// <summary>Called on a timer: Explorer sometimes shows the taskbar again (for example after it restarts).</summary>
-        public static void Enforce()
-        {
-            if (!_hidden) return;
-            foreach (var h in TaskbarWindows())
-            {
-                if (Native.IsWindowVisible(h)) { Hide(); break; }
-            }
-        }
+        [DllImport("user32.dll")]
+        private static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr clip, MonitorEnumProc proc, IntPtr data);
 
-        public static void Restore()
+        public static List<IntPtr> Monitors()
         {
-            try
-            {
-                foreach (var h in TaskbarWindows()) Native.ShowWindow(h, Native.SW_SHOW);
-                if (_haveSaved)
-                {
-                    var r = _savedWorkArea;
-                    Native.SystemParametersInfo(Native.SPI_SETWORKAREA, 0, ref r, Native.SPIF_SENDCHANGE);
-                }
-                _hidden = false;
-            }
-            catch (Exception ex) { Log.Write("Restore taskbar failed: " + ex.Message); }
-        }
-
-        /// <summary>Used by the "Restore Windows taskbar" shortcut. Works even if Arrakis crashed.</summary>
-        public static void EmergencyRestore()
-        {
-            foreach (var h in TaskbarWindows()) Native.ShowWindow(h, Native.SW_SHOW);
-            // Asking Explorer to recalculate the work area: showing the taskbar triggers this,
-            // and a broadcast setting change nudges any windows that cached the old size.
-            var primary = Native.GetPrimaryMonitor();
-            var work = primary.rcMonitor;
-            var tb = Native.FindWindow("Shell_TrayWnd", null);
-            if (tb != IntPtr.Zero && Native.GetWindowRect(tb, out var t))
-            {
-                if (t.Width >= t.Height && t.Top > work.Top) work.Bottom = t.Top;
-                else if (t.Width >= t.Height) work.Top = t.Bottom;
-                else if (t.Left > work.Left) work.Right = t.Left;
-                else work.Left = t.Right;
-                Native.SystemParametersInfo(Native.SPI_SETWORKAREA, 0, ref work, Native.SPIF_SENDCHANGE);
-            }
+            var list = new List<IntPtr>();
+            EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (h, dc, r, d) => { list.Add(h); return true; }, IntPtr.Zero);
+            return list;
         }
     }
 

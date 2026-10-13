@@ -53,6 +53,11 @@ namespace Arrakis.Modules
             _current.Show();
         }
 
+        public static void CloseIfNotHovered()
+        {
+            if (_current != null && !_current.IsMouseOver && !_current._anchor.IsMouseOver) CloseCurrent();
+        }
+
         public static void CloseCurrent()
         {
             try { _current?.Close(); } catch { }
@@ -147,24 +152,7 @@ namespace Arrakis.Modules
             return false;
         }
 
-        private void Place()
-        {
-            try
-            {
-                double scale = WindowHelper.DpiScale(_anchor);
-                var topLeft = _anchor.PointToScreen(new Point(0, 0));
-                double cx = topLeft.X + _anchor.ActualWidth * scale / 2;
-                var hwnd = new WindowInteropHelper(this).Handle;
-                double myScale = WindowHelper.DpiScale(this);
-                int w = (int)Math.Round(ActualWidth * myScale), h = (int)Math.Round(ActualHeight * myScale);
-                int x = (int)Math.Round(cx - w / 2.0), y = (int)Math.Round(topLeft.Y - h - 14 * scale);
-                var mon = Native.GetMonitorAt(new Native.POINT { X = (int)cx, Y = (int)topLeft.Y }).rcWork;
-                x = Math.Max(mon.Left + 8, Math.Min(mon.Right - w - 8, x));
-                y = Math.Max(mon.Top + 8, y);
-                Native.SetWindowPos(hwnd, Native.HWND_TOPMOST, x, y, w, h, Native.SWP_NOACTIVATE);
-            }
-            catch (Exception ex) { Log.Write("Preview placement failed: " + ex.Message); }
-        }
+        private void Place() => DockPopupPlacement.Place(this, _anchor, 14);
 
         private void Register()
         {
@@ -307,21 +295,7 @@ namespace Arrakis.Modules
             };
 
             SourceInitialized += (s, e) => WindowHelper.MakeToolWindow(this, false);
-            Loaded += (s, e) =>
-            {
-                try
-                {
-                    double scale = WindowHelper.DpiScale(anchor);
-                    var p = anchor.PointToScreen(new Point(0, 0));
-                    double cx = p.X / scale + anchor.ActualWidth / 2;
-                    Left = cx - ActualWidth / 2;
-                    Top = p.Y / scale - ActualHeight - 4;
-                    var wa = SystemParameters.WorkArea;
-                    Left = Math.Max(wa.Left + 4, Math.Min(wa.Right - ActualWidth - 4, Left));
-                    Top = Math.Max(wa.Top + 4, Top);
-                }
-                catch { }
-            };
+            Loaded += (s, e) => DockPopupPlacement.Place(this, anchor, 6);
             Deactivated += (s, e) => SafeClose();
             KeyDown += (s, e) => { if (e.Key == Key.Escape) SafeClose(); };
         }
@@ -339,6 +313,40 @@ namespace Arrakis.Modules
             if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("0") + " KB";
             if (bytes < 1024L * 1024 * 1024) return (bytes / 1024.0 / 1024).ToString("0.0") + " MB";
             return (bytes / 1024.0 / 1024 / 1024).ToString("0.0") + " GB";
+        }
+    }
+
+    /// <summary>Places a pop-up next to a dock icon: above it for a bottom dock, beside it for a side dock. Works on any screen and DPI.</summary>
+    internal static class DockPopupPlacement
+    {
+        public static void Place(Window w, FrameworkElement anchor, double gapDip)
+        {
+            try
+            {
+                var hwnd = new WindowInteropHelper(w).Handle;
+                if (hwnd == IntPtr.Zero) return;
+                // PointToScreen includes the icon's current zoom, so pop-ups sit next to the grown icon.
+                var a = anchor.PointToScreen(new Point(0, 0));
+                var b = anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight));
+                double left = Math.Min(a.X, b.X), right = Math.Max(a.X, b.X), top = Math.Min(a.Y, b.Y), bottom = Math.Max(a.Y, b.Y);
+                double cx = (left + right) / 2, cy = (top + bottom) / 2;
+                double scale = WindowHelper.DpiScale(anchor);
+                double myScale = WindowHelper.DpiScale(w);
+                int pw = (int)Math.Round(w.ActualWidth * myScale), ph = (int)Math.Round(w.ActualHeight * myScale);
+                int gap = (int)Math.Round(gapDip * scale);
+                int x, y;
+                switch (Settings.Current.Dock.Position)
+                {
+                    case "Left": x = (int)right + gap; y = (int)Math.Round(cy - ph / 2.0); break;
+                    case "Right": x = (int)left - pw - gap; y = (int)Math.Round(cy - ph / 2.0); break;
+                    default: x = (int)Math.Round(cx - pw / 2.0); y = (int)top - ph - gap; break;
+                }
+                var mon = Native.GetMonitorAt(new Native.POINT { X = (int)cx, Y = (int)cy }).rcMonitor;
+                x = Math.Max(mon.Left + 8, Math.Min(mon.Right - pw - 8, x));
+                y = Math.Max(mon.Top + 8, Math.Min(mon.Bottom - ph - 8, y));
+                Native.SetWindowPos(hwnd, Native.HWND_TOPMOST, x, y, pw, ph, Native.SWP_NOACTIVATE);
+            }
+            catch (Exception ex) { Log.Write("Pop-up placement failed: " + ex.Message); }
         }
     }
 }
