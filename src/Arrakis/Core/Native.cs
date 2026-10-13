@@ -5,7 +5,7 @@ using System.Text;
 namespace Arrakis.Core
 {
     /// <summary>All the Win32 calls Arrakis needs, in one place.</summary>
-    internal static class Native
+    public static class Native
     {
         // ---------- Window messages and styles ----------
         public const int WM_HOTKEY = 0x0312;
