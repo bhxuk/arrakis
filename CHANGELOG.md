@@ -5,7 +5,7 @@
 A much bigger screenshot tool.
 
 - **New ways to capture**: window (Ctrl+Alt+D), full screen (Ctrl+Alt+A), all screens, last area again and a 5-second delay.
-  Greenshot-style Print Screen keys are available too.
+  Optional Print Screen keys too: on its own for an area, with Alt, Ctrl or Shift for the other modes.
 - **Better picking**: a magnifier with exact pixel position and colour, windows outlined as you hover, Space to switch modes,
   arrow keys to nudge, C to copy a colour. Optionally include the mouse pointer.
 - **New editor tools**: select and move, ellipse, line, freehand pen, speech-bubble callouts, soft blur, crop and a colour picker,

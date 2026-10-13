@@ -161,7 +161,7 @@ Change the size, turn off image saving or clear everything in Arrakis > Clipboar
 The tray menu (right-click the Arrakis icon > **Screenshot**) and Arrakis > Capture also have **All screens**,
 **Last area again** and **Area in 5 seconds**, which gives you time to open a menu first.
 
-**Using the Print Screen key**: switch on *Use the Print Screen key* in Arrakis > Capture to get Greenshot-style keys:
+**Using the Print Screen key**: switch on *Use the Print Screen key* in Arrakis > Capture to use these keys:
 **Print Screen** for an area, **Alt+Print Screen** for a window, **Ctrl+Print Screen** for the full screen and
 **Shift+Print Screen** for the last area again. Windows may already use Print Screen for Snipping Tool; turn that off in
 Windows Settings > Accessibility > Keyboard first.

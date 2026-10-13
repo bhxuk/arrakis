@@ -71,12 +71,12 @@ Links, colours and images are recognised. Password managers that mark copies as 
 
 ### Capture
 
-A full screenshot tool in the spirit of Greenshot.
+A complete screenshot studio, built in.
 
 **Capture** an area (**Ctrl+Alt+S**), a window (**Ctrl+Alt+D**), the full screen (**Ctrl+Alt+A**), every screen at once,
 the same area as last time, or after a 5-second countdown. While you pick, a magnifier shows the exact pixel and its colour,
-windows light up as you hover them, and **Space** switches between area and window mode. You can also use the
-Print Screen keys the way Greenshot does.
+windows light up as you hover them, and **Space** switches between area and window mode. You can also set it up to use
+the Print Screen key, with Alt, Ctrl and Shift for the other modes.
 
 <img src="docs/images/capture-overlay.png" alt="Picking an area, with the size shown and a magnifier showing the pixel under the mouse" width="900">
 
