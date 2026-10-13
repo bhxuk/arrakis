@@ -134,8 +134,8 @@ publish\Arrakis.exe
 ```
 
 To make the installer too, install [Inno Setup 6](https://jrsoftware.org/isinfo.php) and run
-`iscc installer\Arrakis.iss`. Every push to GitHub builds both automatically, and tagging a version
-(for example `v1.0.1`) publishes a release with `Arrakis-Setup.exe` attached.
+`iscc installer\Arrakis.iss`. Every push to GitHub builds both automatically. When the `<Version>` in
+`src/Arrakis/Arrakis.csproj` changes, the build publishes a new release with `Arrakis-Setup.exe` attached.
 
 ### How it's put together
 

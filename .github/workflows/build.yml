@@ -61,16 +61,30 @@ jobs:
           name: Arrakis-Setup-${{ steps.ver.outputs.version }}
           path: dist/Arrakis-Setup.exe
 
+      - name: Is this a new version?
+        id: rel
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "v${{ steps.ver.outputs.version }}" --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) { "new=false" >> $env:GITHUB_OUTPUT } else { "new=true" >> $env:GITHUB_OUTPUT }
+          $global:LASTEXITCODE = 0
+
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.rel.outputs.new == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
           name: Arrakis ${{ steps.ver.outputs.version }}
+          make_latest: true
           files: dist/Arrakis-Setup.exe
           body: |
             ## Download
 
-            **[Arrakis-Setup.exe](https://github.com/bhxuk/arrakis/releases/download/${{ github.ref_name }}/Arrakis-Setup.exe)**, then double-click it. No admin rights needed.
+            **[Arrakis-Setup.exe](https://github.com/bhxuk/arrakis/releases/download/v${{ steps.ver.outputs.version }}/Arrakis-Setup.exe)**, then double-click it. No admin rights needed.
 
             Windows may show "Windows protected your PC" because the installer isn't code-signed. Click **More info** and then **Run anyway**.
 
