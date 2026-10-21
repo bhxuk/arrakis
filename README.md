@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/images/banner.jpg" alt="Arrakis: a golden desert planet with a thin ring, above the word ARRAKIS" width="900">
-
 # Arrakis
 
 **Your whole desktop, in one small app.**
